@@ -174,57 +174,105 @@ function DroppableColumn({
     id: status,
   });
 
+  // Renk bazlı gradient ve accent tanımları
+  const getColumnStyles = () => {
+    if (status === 'todo') {
+      return {
+        gradient: 'from-zinc-500/5 via-transparent to-transparent dark:from-zinc-400/5',
+        accent: 'bg-zinc-500',
+        iconBg: 'bg-zinc-100 dark:bg-zinc-800/50',
+        iconColor: 'text-zinc-600 dark:text-zinc-400',
+        hoverBg: 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30'
+      };
+    }
+    if (status === 'in_progress') {
+      return {
+        gradient: 'from-blue-500/5 via-transparent to-transparent dark:from-blue-400/5',
+        accent: 'bg-blue-500',
+        iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        hoverBg: 'hover:bg-blue-50/50 dark:hover:bg-blue-500/5'
+      };
+    }
+    return {
+      gradient: 'from-emerald-500/5 via-transparent to-transparent dark:from-emerald-400/5',
+      accent: 'bg-emerald-500',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      hoverBg: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5'
+    };
+  };
+
+  const styles = getColumnStyles();
+
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[320px] flex flex-col h-full bg-zinc-100/50 dark:bg-black/30 rounded-3xl p-5 backdrop-blur-sm transition-all ${
-        isOver ? 'bg-white/50 dark:bg-white/5' : ''
+      className={`flex-1 min-w-[320px] flex flex-col h-full relative rounded-2xl border border-zinc-200/50 dark:border-white/5 overflow-hidden transition-all duration-300 ${
+        isOver 
+          ? 'border-zinc-300 dark:border-white/10 scale-[1.01] shadow-lg' 
+          : ''
       }`}
     >
-      {/* Başlık */}
-      <div className="flex items-center justify-between mb-5 pb-4 border-b border-zinc-200 dark:border-white/10">
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl bg-${color}-500/10 dark:bg-${color}-500/15`}>
-            <Icon className={`w-5 h-5 text-${color}-600 dark:text-${color}-400`} />
-          </div>
-          <h3 className="font-bold text-zinc-900 dark:text-white text-lg">{title}</h3>
-        </div>
-        <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10">
-          <span className="text-sm font-bold text-zinc-600 dark:text-zinc-300">{todos.length}</span>
-        </div>
-      </div>
+      {/* Gradient Background */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${styles.gradient} pointer-events-none`} />
+      
+      {/* Glass Background */}
+      <div className="absolute inset-0 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl pointer-events-none" />
+      
+      {/* Top Accent Line */}
+      <div className={`absolute top-0 left-0 right-0 h-[2px] ${styles.accent} opacity-60`} />
 
-      {/* Todo Listesi */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-        <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <AnimatePresence mode="popLayout">
-            {todos.map((todo) => (
-              <motion.div
-                key={todo.id}
-                layout
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-              >
-                <SortableTodoCard todo={todo} onDelete={onDelete} onEdit={onEdit} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </SortableContext>
-
-        {todos.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="h-40 border-2 border-dashed border-zinc-200 dark:border-zinc-800/50 rounded-2xl flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-700 gap-2"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-center border border-zinc-200 dark:border-white/5">
-              <Icon className="w-6 h-6 opacity-20" />
+      {/* Content */}
+      <div className="relative z-10 flex flex-col h-full p-5">
+        {/* Başlık */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${styles.iconBg} shadow-sm`}>
+              <Icon className={`w-5 h-5 ${styles.iconColor}`} />
             </div>
-            <span className="text-sm font-medium">Boş</span>
-          </motion.div>
-        )}
+            <div>
+              <h3 className="font-bold text-zinc-900 dark:text-white text-base">{title}</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
+                {todos.length === 0 ? 'Görev yok' : `${todos.length} görev`}
+              </p>
+            </div>
+          </div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${styles.iconBg} shadow-sm`}>
+            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{todos.length}</span>
+          </div>
+        </div>
+
+        {/* Todo Listesi */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+          <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <AnimatePresence mode="popLayout">
+              {todos.map((todo) => (
+                <motion.div
+                  key={todo.id}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <SortableTodoCard todo={todo} onDelete={onDelete} onEdit={onEdit} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </SortableContext>
+
+          {todos.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="h-32 border border-dashed border-zinc-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-2 bg-zinc-50/50 dark:bg-white/[0.02]"
+            >
+              <Icon className="w-8 h-8 opacity-30" />
+              <span className="text-xs font-medium">Sürükle & bırak</span>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -407,7 +455,8 @@ export default function TodosPageManager({ todos: initialTodos, onRefresh }: Tod
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="h-full w-full flex flex-col p-6 overflow-hidden relative">
+      <div className="w-full h-full flex items-center justify-center p-6 animate-fadeIn">
+        <div className="w-full max-w-[95%] h-[85vh] flex flex-col rounded-3xl backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/40 dark:bg-black/40 light:bg-white/90 light:shadow-xl overflow-hidden p-6">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between mb-8">
           <div>
@@ -455,15 +504,17 @@ export default function TodosPageManager({ todos: initialTodos, onRefresh }: Tod
           </div>
         </div>
 
-        {/* Drag Overlay */}
-        <DragOverlay>
-          {activeTodo ? (
-            <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-white/30 rounded-2xl p-4 shadow-2xl rotate-3 scale-105">
-              <div className="text-zinc-900 dark:text-white font-semibold text-sm">{activeTodo.title}</div>
-            </div>
-          ) : null}
-        </DragOverlay>
+        </div>
       </div>
+
+      {/* Drag Overlay - DndContext içinde ama container dışında olmalı */}
+      <DragOverlay dropAnimation={null}>
+        {activeTodo ? (
+          <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-white/30 rounded-2xl p-4 shadow-2xl cursor-grabbing">
+            <div className="text-zinc-900 dark:text-white font-semibold text-sm">{activeTodo.title}</div>
+          </div>
+        ) : null}
+      </DragOverlay>
 
       {/* MODAL: YENİ GÖREV */}
       <AnimatePresence>
@@ -619,7 +670,7 @@ export default function TodosPageManager({ todos: initialTodos, onRefresh }: Tod
                     <select
                       className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none appearance-none cursor-pointer"
                       value={editingTodo.priority}
-                      onChange={e => setEditingTodo({ ...editingTodo, priority: e.target.value })}
+                      onChange={e => setEditingTodo({ ...editingTodo, priority: e.target.value as "low" | "medium" | "high" })}
                     >
                       <option value="low">Düşük</option>
                       <option value="medium">Orta</option>

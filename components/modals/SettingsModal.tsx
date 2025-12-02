@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Sun, Moon, Globe, Bell, Shield, Loader2, Check, Share2, Trash2 } from 'lucide-react';
+import { X, Sun, Moon, Globe, Bell, Shield, Loader2, Check, Share2, Trash2, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@supabase/supabase-js';
 import { updateNotificationSettings, deleteUserAccount } from '@/app/actions';
+import { createBrowserClient } from '@/lib/supabase/client';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -29,6 +30,15 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
   const [shareData, setShareData] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Wallet PIN States
+  const [walletPinEnabled, setWalletPinEnabled] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [confirmPinInput, setConfirmPinInput] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [pinMode, setPinMode] = useState<'set' | 'change' | 'disable'>('set');
+  const [isUpdatingPin, setIsUpdatingPin] = useState(false);
+
   const handleDeleteAccount = async () => {
     if (!confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
 
@@ -43,6 +53,17 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
     }
   };
 
+  // ESC tuşu ile kapatma
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !showPinModal) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose, showPinModal]);
+
   // Initialize settings from user metadata
   useEffect(() => {
     if (user?.user_metadata?.notification_settings) {
@@ -52,6 +73,104 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
       setSecurityAlerts(settings.security_alerts ?? true);
     }
   }, [user]);
+
+  // Load wallet PIN setting
+  useEffect(() => {
+    const loadWalletPinSetting = async () => {
+      if (!user) return;
+      const supabase = createBrowserClient();
+      const { data: pref } = await supabase
+        .from('user_preferences')
+        .select('wallet_pin_enabled')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (pref?.wallet_pin_enabled) {
+        setWalletPinEnabled(true);
+      }
+    };
+    loadWalletPinSetting();
+  }, [user]);
+
+  const handleWalletPinToggle = () => {
+    if (!walletPinEnabled) {
+      setPinMode('set');
+      setPinInput('');
+      setConfirmPinInput('');
+      setShowPinModal(true);
+    } else {
+      setPinMode('disable');
+      setPinInput('');
+      setShowPinModal(true);
+    }
+  };
+
+  const handlePinSave = async () => {
+    if (!user) return;
+    const supabase = createBrowserClient();
+
+    if (pinMode === 'set' || pinMode === 'change') {
+      if (pinInput.length < 4) {
+        toast.error('PIN en az 4 haneli olmalıdır');
+        return;
+      }
+      if (pinInput !== confirmPinInput) {
+        toast.error('PIN\'ler eşleşmiyor');
+        return;
+      }
+    }
+
+    setIsUpdatingPin(true);
+    try {
+      if (pinMode === 'disable') {
+        const { data: pref } = await supabase
+          .from('user_preferences')
+          .select('wallet_pin')
+          .eq('user_id', user.id)
+          .single();
+
+        if (pref?.wallet_pin !== pinInput) {
+          toast.error('Yanlış PIN');
+          setIsUpdatingPin(false);
+          return;
+        }
+
+        await supabase
+          .from('user_preferences')
+          .update({ wallet_pin_enabled: false, wallet_pin: null })
+          .eq('user_id', user.id);
+
+        setWalletPinEnabled(false);
+        toast.success('Cüzdan PIN koruması kaldırıldı');
+      } else {
+        await supabase
+          .from('user_preferences')
+          .update({ wallet_pin_enabled: true, wallet_pin: pinInput })
+          .eq('user_id', user.id);
+
+        setWalletPinEnabled(true);
+        toast.success('Cüzdan PIN koruması aktif');
+      }
+
+      setShowPinModal(false);
+      setPinInput('');
+      setConfirmPinInput('');
+    } catch (error) {
+      console.error('PIN ayarlama hatası:', error);
+      toast.error('Bir hata oluştu');
+    } finally {
+      setIsUpdatingPin(false);
+    }
+  };
+
+  const handlePinInputChange = (value: string, field: 'pin' | 'confirm') => {
+    const numericValue = value.replace(/\D/g, '').slice(0, 6);
+    if (field === 'pin') {
+      setPinInput(numericValue);
+    } else {
+      setConfirmPinInput(numericValue);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -283,6 +402,45 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
             </div>
 
             <div className="space-y-6">
+              {/* Wallet PIN Protection */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-200 dark:border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${walletPinEnabled ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}`}>
+                    {walletPinEnabled ? <Lock size={20} /> : <Unlock size={20} />}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-zinc-900 dark:text-white">Cüzdan PIN Koruması</h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-500">
+                      {walletPinEnabled ? 'Cüzdana girerken PIN sorulacak' : 'Cüzdanı PIN ile koruyun'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleWalletPinToggle}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900 ${walletPinEnabled ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
+                    }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${walletPinEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                  />
+                </button>
+              </div>
+
+              {walletPinEnabled && (
+                <button
+                  onClick={() => {
+                    setPinMode('change');
+                    setPinInput('');
+                    setConfirmPinInput('');
+                    setShowPinModal(true);
+                  }}
+                  className="ml-4 text-sm text-emerald-500 hover:text-emerald-400 transition-colors"
+                >
+                  PIN'i Değiştir
+                </button>
+              )}
+
               {/* Share Data */}
               <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-200 dark:border-white/5">
                 <div className="flex items-center gap-3">
@@ -329,6 +487,107 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
                 </div>
               </div>
             </div>
+
+            {/* PIN Modal */}
+            {showPinModal && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <Lock className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+                        {pinMode === 'disable' ? 'PIN\'i Kaldır' : pinMode === 'change' ? 'PIN\'i Değiştir' : 'PIN Belirle'}
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        {pinMode === 'disable' ? 'Mevcut PIN\'inizi girin' : '4-6 haneli bir PIN belirleyin'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block">
+                        {pinMode === 'disable' ? 'Mevcut PIN' : 'PIN'}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={pinInput}
+                          onChange={(e) => handlePinInputChange(e.target.value, 'pin')}
+                          placeholder="••••"
+                          maxLength={6}
+                          autoComplete="new-password"
+                          name="wallet-pin-new"
+                          id="wallet-pin-new"
+                          data-form-type="other"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500"
+                          style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' } as React.CSSProperties}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPin(!showPin)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                        >
+                          {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {(pinMode === 'set' || pinMode === 'change') && (
+                      <div>
+                        <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block">
+                          PIN'i Tekrarla
+                        </label>
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={confirmPinInput}
+                          onChange={(e) => handlePinInputChange(e.target.value, 'confirm')}
+                          placeholder="••••"
+                          maxLength={6}
+                          autoComplete="new-password"
+                          name="wallet-pin-confirm"
+                          id="wallet-pin-confirm"
+                          data-form-type="other"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500"
+                          style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' } as React.CSSProperties}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => {
+                        setShowPinModal(false);
+                        setPinInput('');
+                        setConfirmPinInput('');
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      onClick={handlePinSave}
+                      disabled={isUpdatingPin || pinInput.length < 4}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isUpdatingPin ? '...' : pinMode === 'disable' ? 'Kaldır' : 'Kaydet'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
     }

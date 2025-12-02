@@ -10,6 +10,8 @@ import AccountsPageManager from '@/components/AccountsPageManager';
 import { useRouter } from 'next/navigation';
 import { useModalStore } from '@/lib/store/useModalStore';
 import { getCardsCache, getIbansCache } from '@/components/DataPreloader';
+import { Lock, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function WalletPage() {
   const [cards, setCards] = useState<any[]>([]);
@@ -18,6 +20,14 @@ export default function WalletPage() {
   const [activeTab, setActiveTab] = useState('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  
+  // PIN States
+  const [isPinRequired, setIsPinRequired] = useState(false);
+  const [isPinVerified, setIsPinVerified] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [storedPin, setStoredPin] = useState<string | null>(null);
+  const [checkingPin, setCheckingPin] = useState(true);
   const cardsRef = useRef<any>(null);
   const ibansRef = useRef<any>(null);
   const accountsRef = useRef<any>(null);
@@ -52,6 +62,58 @@ export default function WalletPage() {
       setActiveTab('ibans');
     }
   }, [isAddIbanModalOpen]);
+
+  // Check PIN requirement on mount
+  useEffect(() => {
+    const checkPinRequirement = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const { data: pref } = await supabase
+        .from('user_preferences')
+        .select('wallet_pin_enabled, wallet_pin')
+        .eq('user_id', user.id)
+        .single();
+
+      if (pref?.wallet_pin_enabled && pref?.wallet_pin) {
+        setIsPinRequired(true);
+        setStoredPin(pref.wallet_pin);
+        
+        // Check session storage for already verified
+        const sessionVerified = sessionStorage.getItem('wallet_pin_verified');
+        if (sessionVerified === 'true') {
+          setIsPinVerified(true);
+        }
+      } else {
+        setIsPinVerified(true);
+      }
+      setCheckingPin(false);
+    };
+
+    checkPinRequirement();
+  }, [router, supabase]);
+
+  const handlePinSubmit = () => {
+    if (pinInput === storedPin) {
+      setIsPinVerified(true);
+      setPinError(false);
+      sessionStorage.setItem('wallet_pin_verified', 'true');
+      toast.success('Cüzdan kilidi açıldı');
+    } else {
+      setPinError(true);
+      setPinInput('');
+      toast.error('Yanlış PIN');
+    }
+  };
+
+  const handlePinKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && pinInput.length >= 4) {
+      handlePinSubmit();
+    }
+  };
 
   const loadData = useCallback(async () => {
     const {
@@ -181,6 +243,114 @@ export default function WalletPage() {
       accountsRef.current.triggerCreate();
     }
   };
+
+  // Show loading while checking PIN
+  if (checkingPin) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Show PIN entry screen if required and not verified
+  if (isPinRequired && !isPinVerified) {
+    return (
+      <div className="w-full h-full pt-6">
+        <div className="w-full min-h-[750px] rounded-3xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/20 dark:bg-black/20 light:bg-white/90 backdrop-blur-sm overflow-hidden light:shadow-xl flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center max-w-sm p-8"
+          >
+            {/* Lock Icon */}
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-emerald-500" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Cüzdan Kilitli</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-8">Devam etmek için PIN'inizi girin</p>
+
+            {/* PIN Input */}
+            <div className="flex justify-center gap-3 mb-6">
+              {[0, 1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all ${
+                    pinError
+                      ? 'border-red-500 bg-red-500/10'
+                      : pinInput.length > index
+                        ? 'border-emerald-500 bg-emerald-500/10 text-white dark:text-white light:text-zinc-900'
+                        : 'border-zinc-300 dark:border-white/10 bg-zinc-100 dark:bg-white/5'
+                  }`}
+                >
+                  {pinInput.length > index && '•'}
+                </div>
+              ))}
+            </div>
+
+            {/* Number Pad */}
+            <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => {
+                    if (pinInput.length < 6) {
+                      const newPin = pinInput + num;
+                      setPinInput(newPin);
+                      setPinError(false);
+                      if (newPin.length >= 4 && newPin === storedPin) {
+                        setTimeout(() => {
+                          setIsPinVerified(true);
+                          sessionStorage.setItem('wallet_pin_verified', 'true');
+                          toast.success('Cüzdan kilidi açıldı');
+                        }, 100);
+                      }
+                    }
+                  }}
+                  className="h-14 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-xl font-semibold transition-all active:scale-95"
+                >
+                  {num}
+                </button>
+              ))}
+              <div /> {/* Empty space */}
+              <button
+                onClick={() => {
+                  if (pinInput.length < 6) {
+                    const newPin = pinInput + '0';
+                    setPinInput(newPin);
+                    setPinError(false);
+                    if (newPin.length >= 4 && newPin === storedPin) {
+                      setTimeout(() => {
+                        setIsPinVerified(true);
+                        sessionStorage.setItem('wallet_pin_verified', 'true');
+                        toast.success('Cüzdan kilidi açıldı');
+                      }, 100);
+                    }
+                  }
+                }}
+                className="h-14 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white text-xl font-semibold transition-all active:scale-95"
+              >
+                0
+              </button>
+              <button
+                onClick={() => setPinInput(pinInput.slice(0, -1))}
+                className="h-14 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white transition-all active:scale-95"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
+                </svg>
+              </button>
+            </div>
+
+            {pinError && (
+              <p className="text-red-500 text-sm mt-4">Yanlış PIN. Tekrar deneyin.</p>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full pt-6">

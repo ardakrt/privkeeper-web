@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import ThemeToggle from "@/components/ThemeToggle";
 import AccentColorPicker from "@/components/AccentColorPicker";
+import WalletPinSettings from "@/components/WalletPinSettings";
 
 export default async function Page() {
   const supabase = await createSupabaseServerClient();
@@ -13,10 +14,11 @@ export default async function Page() {
 
   const { data: pref } = await supabase
     .from("user_preferences")
-    .select("theme_mode_web, accent_color")
+    .select("theme_mode_web, accent_color, wallet_pin_enabled, wallet_pin")
     .eq("user_id", user.id)
     .single();
   const accentColor = (pref as any)?.accent_color || "#3b82f6";
+  const walletPinEnabled = (pref as any)?.wallet_pin_enabled || false;
 
   return (
     <div className="min-h-screen p-6 space-y-6 relative dark:bg-zinc-950 light:bg-[#F9FAFB]">
@@ -40,6 +42,11 @@ export default async function Page() {
         <h2 className="text-lg font-medium dark:text-white light:text-zinc-900">Tema ve Görünüm</h2>
         <ThemeToggle />
         <AccentColorPicker currentColor={accentColor} />
+      </div>
+
+      <div className="space-y-6 max-w-2xl mx-auto mt-8">
+        <h2 className="text-lg font-medium dark:text-white light:text-zinc-900">Güvenlik</h2>
+        <WalletPinSettings enabled={walletPinEnabled} />
       </div>
     </div>
   );

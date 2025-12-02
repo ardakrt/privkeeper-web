@@ -5,7 +5,7 @@ import { createBrowserClient } from "@/lib/supabase/client";
 import {
   Loader2, HardDrive, Cloud, Image as ImageIcon, FileText, Folder, File,
   Search, Plus, Video, Trash2, Upload, MoreVertical, ArrowDown, User,
-  ChevronLeft, FolderPlus, RefreshCw, ExternalLink, Check, X, Maximize2
+  ChevronLeft, FolderPlus, RefreshCw, ExternalLink, Check, X, Maximize2, LogOut
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
@@ -205,6 +205,41 @@ export default function DrivePage() {
     });
   };
 
+  // --- DRIVE'DAN ÇIKIŞ YAP ---
+  const handleDisconnect = async () => {
+    showConfirm(
+      "Google Drive bağlantınız kaldırılacak. Dosyalarınız Google'da kalacak ancak Keeper'dan erişemeyeceksiniz.",
+      async () => {
+        const toastId = toast.loading("Bağlantı kaldırılıyor...");
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Kullanıcı bulunamadı");
+
+          // Refresh token'ı sil
+          const { error } = await supabase
+            .from('user_preferences')
+            .update({ google_refresh_token: null })
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+
+          toast.success("Drive bağlantısı kaldırıldı", { id: toastId });
+          setIsConnected(false);
+          setFiles([]);
+          setStorage(null);
+          
+          // Cache'i temizle
+          localStorage.removeItem(`keeper_cache_drive_files_${user.id}`);
+          localStorage.removeItem(`keeper_cache_drive_storage_${user.id}`);
+        } catch (error) {
+          console.error("Bağlantı kaldırma hatası:", error);
+          toast.error("Bağlantı kaldırılamadı", { id: toastId });
+        }
+      },
+      "Drive Bağlantısını Kaldır"
+    );
+  };
+
   // --- YENİ KLASÖR OLUŞTURMA ---
   const handleCreateFolder = () => {
     setContextMenu(null);
@@ -349,14 +384,16 @@ export default function DrivePage() {
 
   if (!isConnected) {
     return (
-      <div className="flex-1 flex items-center justify-center h-full p-8">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-zinc-100 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-zinc-200 dark:border-white/10">
-            <HardDrive className="w-10 h-10 text-zinc-900 dark:text-white" />
+      <div className="w-full h-full flex items-center justify-center p-6 animate-fadeIn">
+        <div className="w-full max-w-[95%] h-[85vh] flex items-center justify-center rounded-3xl backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/40 dark:bg-black/40 light:bg-white/90 light:shadow-xl">
+          <div className="text-center max-w-md p-8">
+            <div className="w-20 h-20 bg-zinc-100 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-zinc-200 dark:border-white/10">
+              <HardDrive className="w-10 h-10 text-zinc-900 dark:text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Drive'ım</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-8">Dosyalarına erişmek için bağlan.</p>
+            <button onClick={handleConnect} className="bg-zinc-900 dark:bg-white text-white dark:text-black font-bold py-3 px-8 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors mt-4">Google ile Bağlan</button>
           </div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Drive'ım</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-8">Dosyalarına erişmek için bağlan.</p>
-          <button onClick={handleConnect} className="bg-zinc-900 dark:bg-white text-white dark:text-black font-bold py-3 px-8 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors mt-4">Google ile Bağlan</button>
         </div>
       </div>
     );
@@ -634,16 +671,25 @@ export default function DrivePage() {
 
           {/* Footer */}
           <div className="px-8 py-4 bg-zinc-100/50 dark:bg-black/20 border-t border-zinc-200 dark:border-white/5 flex justify-between items-center">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <Cloud className="w-3 h-3" />
-              <span>{storageText}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Cloud className="w-3 h-3" />
+                <span>{storageText}</span>
+              </div>
+              <div className="w-32 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                  style={{ width: storage ? `${(parseInt(storage.usage) / parseInt(storage.limit)) * 100}%` : '0%' }}
+                ></div>
+              </div>
             </div>
-            <div className="w-32 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                style={{ width: storage ? `${(parseInt(storage.usage) / parseInt(storage.limit)) * 100}%` : '0%' }}
-              ></div>
-            </div>
+            <button
+              onClick={handleDisconnect}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Bağlantıyı Kes</span>
+            </button>
           </div>
 
         </div>

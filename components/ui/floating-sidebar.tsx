@@ -18,6 +18,7 @@ import {
   Shield,
   HardDrive,
   ListTodo,
+  TrendingUp,
 } from "lucide-react";
 
 const navigationItems = [
@@ -28,6 +29,7 @@ const navigationItems = [
   { type: "divider" }, // Ayırıcı
   // Orta Kısım - Finans
   { name: "Cüzdan", href: "/dashboard/wallet", icon: Wallet },
+  { name: "Piyasalar", href: "/dashboard/markets", icon: TrendingUp },
   { name: "Abonelikler", href: "/dashboard/subscriptions", icon: Receipt },
   { type: "divider" }, // Ayırıcı
   // Alt Kısım - Araçlar
@@ -39,7 +41,7 @@ const navigationItems = [
 export default function FloatingSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -103,8 +105,10 @@ export default function FloatingSidebar() {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
+          if (!Icon) return null;
+
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href || index} href={item.href || '#'}>
               <motion.div
                 title={isCollapsed ? item.name : ""}
                 className={`
@@ -184,14 +188,14 @@ export default function FloatingSidebar() {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
               <button
-                onClick={() => theme !== "light" && toggleTheme("light" as any)}
+                onClick={(e) => theme !== "light" && toggleTheme(e)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl relative z-10 transition-colors ${theme === "light" ? "text-white dark:text-white light:text-white" : "text-zinc-500 dark:text-zinc-500 light:text-zinc-600"}`}
               >
                 <Sun size={16} />
                 <span className="text-xs font-medium">Açık</span>
               </button>
               <button
-                onClick={() => theme !== "dark" && toggleTheme("dark" as any)}
+                onClick={(e) => theme !== "dark" && toggleTheme(e)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl relative z-10 transition-colors ${theme === "dark" ? "text-white dark:text-white light:text-zinc-900" : "text-zinc-500 dark:text-zinc-500 light:text-zinc-600"}`}
               >
                 <Moon size={16} />
@@ -203,7 +207,7 @@ export default function FloatingSidebar() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              onClick={(e) => toggleTheme(e as any)}
+              onClick={(e) => toggleTheme(e)}
               className="w-full py-3 flex items-center justify-center rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 hover:text-white dark:hover:text-white light:hover:text-zinc-900 text-zinc-500 dark:text-zinc-500 light:text-zinc-600 border border-white/5 dark:border-white/5 light:border-zinc-200 transition-colors"
             >
               {theme === "light" ? <Sun size={20} /> : <Moon size={20} />}

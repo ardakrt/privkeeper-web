@@ -48,6 +48,10 @@ const remotePatterns = [
     protocol: "https" as const,
     hostname: "*.com",
   },
+  {
+    protocol: "https" as const,
+    hostname: "picsum.photos",
+  },
 ];
 
 const nextConfig: NextConfig = {

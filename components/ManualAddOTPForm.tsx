@@ -104,7 +104,15 @@ export default function ManualAddOTPForm({ onSuccess }: { onSuccess?: () => void
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-100 transition-colors text-left"
                     >
-                      <span className="text-xl">{info.emoji}</span>
+                      <span 
+                        className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold"
+                        style={{ 
+                          backgroundColor: info?.colors?.bg || '#f4f4f5',
+                          color: info?.colors?.primary || '#71717a'
+                        }}
+                      >
+                        {service.slice(0, 2).toUpperCase()}
+                      </span>
                       <span className="text-sm font-medium text-white dark:text-white light:text-zinc-900">
                         {service}
                       </span>

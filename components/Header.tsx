@@ -114,7 +114,7 @@ export default function Header() {
           {/* Theme Toggle */}
           {mounted && (
             <motion.button
-              onClick={(e) => toggleTheme(e as any)}
+              onClick={(e) => toggleTheme(e)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}

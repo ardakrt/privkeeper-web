@@ -48,6 +48,17 @@ export default function ProfileModal({ isOpen, onClose, user, onUpdate }: Profil
   const [confirmPin, setConfirmPin] = useState('');
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
 
+  // ESC tuşu ile kapatma
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
   // Update states when user prop changes
   useEffect(() => {
     if (user) {

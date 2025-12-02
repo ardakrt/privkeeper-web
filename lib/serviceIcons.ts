@@ -2,14 +2,15 @@
  * Service icons and brand definitions using Brandfetch CDN
  */
 
-export type BrandType = "brandfetch" | "text";
+export type BrandType = "brandfetch" | "text" | "svg-path";
 
 export interface BrandInfo {
   id: string;
   name: string;
   type: BrandType;
   domain?: string; // Brandfetch domain (e.g., spotify.com)
-  content?: string; // Fallback text content
+  content?: string; // Fallback text content or SVG path
+  viewBox?: string; // SVG viewBox for svg-path type
   colors: {
     primary: string;
     bg?: string;

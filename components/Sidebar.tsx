@@ -164,14 +164,14 @@ export default function FloatingSidebar() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             />
             <button
-              onClick={() => theme !== "light" && toggleTheme("light" as any)}
+              onClick={(e) => theme !== "light" && toggleTheme(e)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl relative z-10 transition-colors ${theme === "light" ? "text-white" : "text-zinc-500"}`}
             >
               <Sun size={16} />
               <span className="text-xs font-medium">Light</span>
             </button>
             <button
-              onClick={() => theme !== "dark" && toggleTheme("dark" as any)}
+              onClick={(e) => theme !== "dark" && toggleTheme(e)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl relative z-10 transition-colors ${theme === "dark" ? "text-white" : "text-zinc-500"}`}
             >
               <Moon size={16} />
@@ -180,7 +180,7 @@ export default function FloatingSidebar() {
           </div>
         ) : (
           <button
-            onClick={(e) => toggleTheme(e as any)}
+            onClick={(e) => toggleTheme(e)}
             className="w-full py-3 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 hover:text-white text-zinc-500 border border-white/5"
           >
             {theme === "light" ? <Sun size={20} /> : <Moon size={20} />}

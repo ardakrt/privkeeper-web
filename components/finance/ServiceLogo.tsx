@@ -113,40 +113,5 @@ export default function ServiceLogo({ brand, fallbackText, size = "md", classNam
     );
   }
 
-  // --- LEGACY SVG PATH RENDER (Yedek olarak kalsın) ---
-  if (brand.type === "svg-path") {
-    return (
-      <div 
-        className={`rounded-xl flex items-center justify-center shadow-sm relative overflow-hidden ${sizeClasses[size]} ${className}`}
-        style={{ backgroundColor: brand.colors.bg || '#000' }}
-      >
-        <svg 
-          viewBox={brand.viewBox || "0 0 24 24"} 
-          className="w-2/3 h-2/3"
-          style={{ fill: brand.colors.primary }}
-        >
-          <path d={brand.content} />
-        </svg>
-      </div>
-    );
-  }
-
-  // --- IMAGE URL RENDER ---
-  if (brand.type === "image-url" && !imgError) {
-    return (
-      <div className={`rounded-xl flex items-center justify-center bg-white shadow-sm p-2 relative overflow-hidden border border-zinc-100 dark:border-white/10 ${sizeClasses[size]} ${className}`}>
-        <div className="relative w-full h-full">
-            <Image
-              src={brand.content!}
-              alt={brand.name}
-              fill
-              className="object-contain"
-              onError={() => setImgError(true)}
-            />
-        </div>
-      </div>
-    );
-  }
-
   return renderFallback();
 }
