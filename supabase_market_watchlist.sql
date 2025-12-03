@@ -31,3 +31,4 @@ CREATE INDEX IF NOT EXISTS idx_market_watchlist_symbol ON market_watchlist(symbo
 
 
 
+
