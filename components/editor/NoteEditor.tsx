@@ -34,28 +34,26 @@ export default function NoteEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      onContentChange(html);
+      // Plain text olarak kaydet (mobil uyumluluk için)
+      const text = editor.getText();
+      onContentChange(text);
     },
   });
 
-  // Sync content from prop to editor (primarily for initial load)
+  // Sync content from prop to editor (for initial load and note switching)
   useEffect(() => {
-    if (editor && content) {
-      const currentHTML = editor.getHTML();
-      if (editor.isEmpty && content !== '<p></p>') {
-         editor.commands.setContent(content);
-      } 
-    }
-  }, [content, editor]);
-
-  // Handle Note Switching
-  useEffect(() => {
-     if (editor && content && editor.getHTML() !== content) {
-        if (editor.isEmpty) {
-            editor.commands.setContent(content);
+    if (editor) {
+      const currentText = editor.getText();
+      // İçerik değiştiyse editörü güncelle
+      if (content !== currentText) {
+        // Boş içerik için editörü temizle
+        if (!content || content === '') {
+          editor.commands.clearContent();
+        } else {
+          editor.commands.setContent(content);
         }
-     }
+      }
+    }
   }, [content, editor]);
 
   return (

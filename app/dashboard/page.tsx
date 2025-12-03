@@ -34,6 +34,12 @@ import { getOTPSecretsCache } from "@/components/OTPPreloader";
 
 // --- Helper Functions ---
 
+// HTML etiketlerini temizle
+const stripHtml = (html: string | null | undefined): string => {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
 const getWeatherIcon = (code: number, className: string) => {
   // Animasyonlu İkonlar
   if (code === 0) return <Sun className={`${className} text-yellow-500 dark:text-yellow-400 animate-[spin_12s_linear_infinite]`} />;
@@ -202,7 +208,7 @@ export default function DashboardPage() {
       }
       setUser(user);
 
-      const { data: notes } = await supabase.from("notes").select("title, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1);
+      const { data: notes } = await supabase.from("notes").select("title, content, created_at, updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1);
       if (notes && notes.length > 0) setRecentNote(notes[0]);
 
       const { data: subscriptions } = await supabase.from("subscriptions").select("amount, billing_cycle, type").eq("user_id", user.id).eq("type", "subscription");
@@ -473,11 +479,11 @@ export default function DashboardPage() {
                 {!recentNote && <span className="text-xs font-normal text-zinc-600 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">Boş</span>}
               </h3>
               <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed line-clamp-2">
-                {recentNote ? recentNote.content : "Henüz bir notun yok. Buraya tıklayarak ilk notunu oluştur."}
+                {recentNote ? stripHtml(recentNote.content) : "Henüz bir notun yok. Buraya tıklayarak ilk notunu oluştur."}
               </p>
               {recentNote && (
                 <span className="text-xs text-zinc-500 dark:text-zinc-600 block pt-2">
-                  {new Date(recentNote.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(recentNote.updated_at || recentNote.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
             </div>

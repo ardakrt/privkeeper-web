@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
 import {
-  Plus, Calendar, Trash2, CheckCircle2, ListTodo, Clock,
-  AlertCircle, MoreVertical, X, GripVertical, Edit2, Flag, Hourglass
+  Plus, Calendar, Trash2, CheckCircle2, Clock,
+  AlertTriangle, GripVertical, MoreHorizontal,
+  Target
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
@@ -21,11 +22,9 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
-  DragOverEvent,
   useDroppable,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -48,8 +47,23 @@ interface TodosPageManagerProps {
   onRefresh?: () => void;
 }
 
-// --- SORTABLE TODO CARD ---
-function SortableTodoCard({ todo, onDelete, onEdit }: { todo: Todo; onDelete: (todo: Todo) => void; onEdit: (todo: Todo) => void }) {
+// --- TODO ITEM ---
+function TodoItem({ 
+  todo, 
+  onDelete, 
+  onUpdate,
+  onStatusChange
+}: { 
+  todo: Todo; 
+  onDelete: () => void;
+  onUpdate: (updates: Partial<Todo>) => void;
+  onStatusChange: (status: Todo['status']) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(todo.title);
+  const [showMenu, setShowMenu] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const {
     attributes,
     listeners,
@@ -64,215 +78,378 @@ function SortableTodoCard({ todo, onDelete, onEdit }: { todo: Todo; onDelete: (t
     transition,
   };
 
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleSave = () => {
+    if (editTitle.trim() && editTitle !== todo.title) {
+      onUpdate({ title: editTitle.trim() });
+    } else {
+      setEditTitle(todo.title);
+    }
+    setIsEditing(false);
+  };
+
   const getPriorityColor = (p: string) => {
-    if (p === 'high') return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/10 border-red-200 dark:border-red-500/30';
-    if (p === 'medium') return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/30';
-    return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30';
+    if (p === 'high') return 'bg-rose-500';
+    if (p === 'medium') return 'bg-amber-500';
+    return 'bg-sky-500';
   };
 
-  const getPriorityLabel = (p: string) => {
-    if (p === 'high') return 'Yüksek';
-    if (p === 'medium') return 'Orta';
-    return 'Düşük';
-  };
-
-  const isOverdue = todo.due_date && new Date(todo.due_date) < new Date();
+  const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && todo.status !== 'done';
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
-      className={`group relative bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 rounded-2xl backdrop-blur-sm transition-all hover:shadow-xl ${
-        isDragging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+      layout
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+      className={`group bg-white dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all ${
+        isDragging ? 'shadow-xl ring-2 ring-emerald-500/30' : 'shadow-sm hover:shadow-md'
       }`}
     >
-      <div className="p-4">
-        {/* Üst Kısım: Drag Handle ve Öncelik */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <button
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg transition-colors text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400"
+      <div className="flex items-start gap-2 p-3">
+        {/* Drag Handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded opacity-0 group-hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-400 transition-all"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+
+        {/* Checkbox */}
+        <button
+          onClick={() => onStatusChange(todo.status === 'done' ? 'todo' : 'done')}
+          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+            todo.status === 'done'
+              ? 'bg-emerald-500 border-emerald-500 text-white'
+              : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-500 dark:hover:border-emerald-500'
+          }`}
+        >
+          {todo.status === 'done' && <CheckCircle2 className="w-3 h-3" />}
+        </button>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Escape') {
+                  setEditTitle(todo.title);
+                  setIsEditing(false);
+                }
+              }}
+              className="w-full bg-transparent text-zinc-900 dark:text-white text-sm font-medium focus:outline-none"
+            />
+          ) : (
+            <p
+              onClick={() => setIsEditing(true)}
+              className={`text-sm font-medium cursor-text ${
+                todo.status === 'done'
+                  ? 'text-zinc-400 dark:text-zinc-500 line-through'
+                  : 'text-zinc-900 dark:text-white'
+              }`}
             >
-              <GripVertical className="w-4 h-4" />
-            </button>
-            <span className={`text-[10px] px-2.5 py-1 rounded-lg border uppercase tracking-wider font-bold ${getPriorityColor(todo.priority)}`}>
-              {getPriorityLabel(todo.priority)}
-            </span>
-          </div>
+              {todo.title}
+            </p>
+          )}
 
-          {/* Aksiyon Butonları */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => onEdit(todo)}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 dark:text-zinc-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-              title="Düzenle"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onDelete(todo)}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-              title="Sil"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Başlık */}
-        <h4 className="text-zinc-900 dark:text-white font-semibold mb-2 text-sm leading-snug">{todo.title}</h4>
-
-        {/* Açıklama */}
-        {todo.description && (
-          <p className="text-zinc-600 dark:text-zinc-500 text-xs line-clamp-2 mb-3 leading-relaxed">
-            {todo.description}
-          </p>
-        )}
-
-        {/* Alt Kısım: Tarih */}
-        <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-white/5">
-          <div className={`flex items-center gap-1.5 text-xs font-medium ${isOverdue ? 'text-red-500 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-500'}`}>
-            <Calendar className={`w-3.5 h-3.5 ${isOverdue ? 'text-red-500' : 'text-zinc-400 dark:text-zinc-600'}`} />
-            {todo.due_date ? (
-              <span>{format(new Date(todo.due_date), 'd MMM', { locale: tr })}</span>
-            ) : (
-              <span className="text-zinc-400 dark:text-zinc-600">Tarih yok</span>
+          {/* Meta */}
+          <div className="flex items-center gap-2 mt-1.5">
+            {/* Priority */}
+            <span className={`w-2 h-2 rounded-full ${getPriorityColor(todo.priority)}`} />
+            
+            {/* Due Date */}
+            {todo.due_date && (
+              <span className={`text-xs flex items-center gap-1 ${
+                isOverdue ? 'text-rose-500' : 'text-zinc-400 dark:text-zinc-500'
+              }`}>
+                <Calendar className="w-3 h-3" />
+                {format(new Date(todo.due_date), 'd MMM', { locale: tr })}
+              </span>
             )}
           </div>
-          {isOverdue && (
-            <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold uppercase tracking-wider">
-              Gecikmiş
-            </span>
-          )}
+        </div>
+
+        {/* Actions */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-400 transition-all"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+
+          {/* Dropdown Menu */}
+          <AnimatePresence>
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                  className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl py-1"
+                >
+                  <button
+                    onClick={() => { onStatusChange('todo'); setShowMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  >
+                    <Target className="w-4 h-4 text-amber-500" />
+                    Yapılacak
+                  </button>
+                  <button
+                    onClick={() => { onStatusChange('in_progress'); setShowMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  >
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    Devam Ediyor
+                  </button>
+                  <button
+                    onClick={() => { onStatusChange('done'); setShowMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    Tamamlandı
+                  </button>
+                  <div className="border-t border-zinc-100 dark:border-zinc-700 my-1" />
+                  <button
+                    onClick={() => { onDelete(); setShowMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Sil
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-// --- DROPPABLE COLUMN ---
-function DroppableColumn({
+// --- INLINE ADD FORM ---
+function InlineAddForm({ 
+  status, 
+  onAdd, 
+  onCancel 
+}: { 
+  status: string; 
+  onAdd: (title: string, priority: string) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = () => {
+    if (title.trim()) {
+      onAdd(title.trim(), priority);
+      setTitle('');
+      setPriority('medium');
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+    >
+      <div className="bg-white dark:bg-zinc-800/80 rounded-lg border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/10 p-3">
+        {/* Priority Selector - Moved to top */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs text-zinc-500">Öncelik:</span>
+          <div className="flex items-center gap-1">
+            {[
+              { value: 'low', label: 'Normal', color: 'bg-sky-500', ring: 'ring-sky-500' },
+              { value: 'medium', label: 'Orta', color: 'bg-amber-500', ring: 'ring-amber-500' },
+              { value: 'high', label: 'Acil', color: 'bg-rose-500', ring: 'ring-rose-500' }
+            ].map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => setPriority(p.value)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  priority === p.value
+                    ? `${p.color} text-white shadow-sm`
+                    : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Görev adı yazın..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && title.trim()) handleSubmit();
+            if (e.key === 'Escape') onCancel();
+          }}
+          className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 mb-3"
+        />
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+          >
+            İptal
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!title.trim()}
+            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
+          >
+            Ekle
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- COLUMN ---
+function Column({
   title,
   status,
   icon: Icon,
   color,
   todos,
-  onDelete,
-  onEdit
+  onAddTodo,
+  onDeleteTodo,
+  onUpdateTodo,
+  onStatusChange
 }: {
   title: string;
   status: string;
   icon: any;
   color: string;
   todos: Todo[];
-  onDelete: (todo: Todo) => void;
-  onEdit: (todo: Todo) => void;
+  onAddTodo: (status: string, title: string, priority: string) => void;
+  onDeleteTodo: (id: string) => void;
+  onUpdateTodo: (id: string, updates: Partial<Todo>) => void;
+  onStatusChange: (id: string, status: Todo['status']) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: status,
-  });
+  const [isAdding, setIsAdding] = useState(false);
+  const { setNodeRef, isOver } = useDroppable({ id: status });
 
-  // Renk bazlı gradient ve accent tanımları
-  const getColumnStyles = () => {
-    if (status === 'todo') {
-      return {
-        gradient: 'from-zinc-500/5 via-transparent to-transparent dark:from-zinc-400/5',
-        accent: 'bg-zinc-500',
-        iconBg: 'bg-zinc-100 dark:bg-zinc-800/50',
-        iconColor: 'text-zinc-600 dark:text-zinc-400',
-        hoverBg: 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30'
-      };
-    }
-    if (status === 'in_progress') {
-      return {
-        gradient: 'from-blue-500/5 via-transparent to-transparent dark:from-blue-400/5',
-        accent: 'bg-blue-500',
-        iconBg: 'bg-blue-100 dark:bg-blue-500/10',
-        iconColor: 'text-blue-600 dark:text-blue-400',
-        hoverBg: 'hover:bg-blue-50/50 dark:hover:bg-blue-500/5'
-      };
-    }
+  const getColorClasses = () => {
+    if (color === 'amber') return {
+      header: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: isOver ? 'border-amber-400' : 'border-transparent',
+      count: 'bg-amber-500'
+    };
+    if (color === 'blue') return {
+      header: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-500/10',
+      border: isOver ? 'border-blue-400' : 'border-transparent',
+      count: 'bg-blue-500'
+    };
     return {
-      gradient: 'from-emerald-500/5 via-transparent to-transparent dark:from-emerald-400/5',
-      accent: 'bg-emerald-500',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      hoverBg: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5'
+      header: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: isOver ? 'border-emerald-400' : 'border-transparent',
+      count: 'bg-emerald-500'
     };
   };
 
-  const styles = getColumnStyles();
+  const colors = getColorClasses();
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[320px] flex flex-col h-full relative rounded-2xl border border-zinc-200/50 dark:border-white/5 overflow-hidden transition-all duration-300 ${
-        isOver 
-          ? 'border-zinc-300 dark:border-white/10 scale-[1.01] shadow-lg' 
-          : ''
+      className={`flex-1 min-w-[350px] max-w-[450px] flex flex-col h-full rounded-xl border-2 transition-all duration-200 ${colors.border} ${
+        isOver ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'bg-zinc-50/50 dark:bg-zinc-900/30'
       }`}
     >
-      {/* Gradient Background */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${styles.gradient} pointer-events-none`} />
-      
-      {/* Glass Background */}
-      <div className="absolute inset-0 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl pointer-events-none" />
-      
-      {/* Top Accent Line */}
-      <div className={`absolute top-0 left-0 right-0 h-[2px] ${styles.accent} opacity-60`} />
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1.5 rounded-lg ${colors.bg}`}>
+            <Icon className={`w-4 h-4 ${colors.header}`} />
+          </div>
+          <h3 className="font-semibold text-zinc-900 dark:text-white text-sm">{title}</h3>
+          <span className={`text-xs font-bold text-white px-2 py-0.5 rounded-full ${colors.count}`}>
+            {todos.length}
+          </span>
+        </div>
+
+        <button
+          onClick={() => setIsAdding(true)}
+          className="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col h-full p-5">
-        {/* Başlık */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl ${styles.iconBg} shadow-sm`}>
-              <Icon className={`w-5 h-5 ${styles.iconColor}`} />
-            </div>
-            <div>
-              <h3 className="font-bold text-zinc-900 dark:text-white text-base">{title}</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
-                {todos.length === 0 ? 'Görev yok' : `${todos.length} görev`}
-              </p>
-            </div>
-          </div>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${styles.iconBg} shadow-sm`}>
-            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{todos.length}</span>
-          </div>
-        </div>
+      <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
+        <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          <AnimatePresence mode="popLayout">
+            {todos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onDelete={() => onDeleteTodo(todo.id)}
+                onUpdate={(updates) => onUpdateTodo(todo.id, updates)}
+                onStatusChange={(status) => onStatusChange(todo.id, status)}
+              />
+            ))}
+          </AnimatePresence>
+        </SortableContext>
 
-        {/* Todo Listesi */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-          <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
-            <AnimatePresence mode="popLayout">
-              {todos.map((todo) => (
-                <motion.div
-                  key={todo.id}
-                  layout
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <SortableTodoCard todo={todo} onDelete={onDelete} onEdit={onEdit} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </SortableContext>
-
-          {todos.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="h-32 border border-dashed border-zinc-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-2 bg-zinc-50/50 dark:bg-white/[0.02]"
-            >
-              <Icon className="w-8 h-8 opacity-30" />
-              <span className="text-xs font-medium">Sürükle & bırak</span>
-            </motion.div>
+        {/* Inline Add Form */}
+        <AnimatePresence>
+          {isAdding && (
+            <InlineAddForm
+              status={status}
+              onAdd={(title, priority) => {
+                onAddTodo(status, title, priority);
+                setIsAdding(false);
+              }}
+              onCancel={() => setIsAdding(false)}
+            />
           )}
-        </div>
+        </AnimatePresence>
+
+        {/* Add Button (when not adding) */}
+        {!isAdding && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-white dark:hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all group"
+          >
+            <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Görev Ekle</span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -281,29 +458,13 @@ function DroppableColumn({
 // --- MAIN COMPONENT ---
 export default function TodosPageManager({ todos: initialTodos, onRefresh }: TodosPageManagerProps) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos || []);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  const [newTodo, setNewTodo] = useState({
-    title: '',
-    description: '',
-    priority: 'medium',
-    due_date: ''
-  });
 
   const supabase = createBrowserClient();
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const fetchTodos = async () => {
@@ -323,446 +484,195 @@ export default function TodosPageManager({ todos: initialTodos, onRefresh }: Tod
     fetchTodos();
   }, []);
 
-  // --- DRAG & DROP HANDLERS ---
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+  // Stats
+  const todoCount = todos.filter(t => t.status === 'todo').length;
+  const inProgressCount = todos.filter(t => t.status === 'in_progress').length;
+  const doneCount = todos.filter(t => t.status === 'done').length;
+
+  // Handlers
+  const handleAddTodo = async (status: string, title: string, priority: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const newTodo = {
+      title,
+      description: '',
+      priority,
+      due_date: null,
+      status,
+      user_id: user.id
+    };
+
+    // Optimistic update
+    const tempId = `temp-${Date.now()}`;
+    setTodos(prev => [{ ...newTodo, id: tempId } as Todo, ...prev]);
+
+    const { data, error } = await supabase.from('todos').insert(newTodo).select().single();
+
+    if (error) {
+      toast.error('Görev eklenemedi');
+      setTodos(prev => prev.filter(t => t.id !== tempId));
+    } else {
+      setTodos(prev => prev.map(t => t.id === tempId ? data : t));
+      toast.success('Görev eklendi');
+    }
   };
+
+  const handleDeleteTodo = async (id: string) => {
+    setTodos(prev => prev.filter(t => t.id !== id));
+    await supabase.from('todos').delete().eq('id', id);
+    toast.success('Görev silindi');
+  };
+
+  const handleUpdateTodo = async (id: string, updates: Partial<Todo>) => {
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    await supabase.from('todos').update(updates).eq('id', id);
+  };
+
+  const handleStatusChange = async (id: string, status: Todo['status']) => {
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    await supabase.from('todos').update({ status }).eq('id', id);
+    toast.success('Durum güncellendi');
+  };
+
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as string);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
-
     if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
-
     const activeTodo = todos.find(t => t.id === activeId);
     if (!activeTodo) return;
 
-    // Sütun ID'lerini kontrol et (todo, in_progress, done)
     const validStatuses = ['todo', 'in_progress', 'done'];
     let newStatus: string;
 
     if (validStatuses.includes(overId)) {
-      // Doğrudan sütunun üzerine bırakıldı
       newStatus = overId;
     } else {
-      // Başka bir todo'nun üzerine bırakıldı
       const overTodo = todos.find(t => t.id === overId);
       newStatus = overTodo?.status || activeTodo.status;
     }
 
     if (newStatus !== activeTodo.status) {
-      // Optimistic update
-      setTodos(prev => prev.map(t =>
-        t.id === activeId ? { ...t, status: newStatus as any } : t
-      ));
-
-      await supabase
-        .from('todos')
-        .update({ status: newStatus })
-        .eq('id', activeId);
-
-      toast.success('Görev taşındı');
+      handleStatusChange(activeId, newStatus as Todo['status']);
     }
   };
 
-  // --- CRUD OPERATIONS ---
-  const handleAddTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodo.title.trim()) return;
-
-    const toastId = toast.loading('Ekleniyor...');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from('todos').insert({
-      title: newTodo.title,
-      description: newTodo.description,
-      priority: newTodo.priority,
-      due_date: newTodo.due_date || null,
-      status: 'todo',
-      user_id: user.id
-    });
-
-    if (error) {
-      toast.error('Hata oluştu', { id: toastId });
-    } else {
-      toast.success('Görev eklendi', { id: toastId });
-      setNewTodo({ title: '', description: '', priority: 'medium', due_date: '' });
-      setIsModalOpen(false);
-      fetchTodos();
-    }
-  };
-
-  const handleEditTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTodo || !editingTodo.title.trim()) return;
-
-    const toastId = toast.loading('Güncelleniyor...');
-
-    const { error } = await supabase
-      .from('todos')
-      .update({
-        title: editingTodo.title,
-        description: editingTodo.description,
-        priority: editingTodo.priority,
-        due_date: editingTodo.due_date || null,
-      })
-      .eq('id', editingTodo.id);
-
-    if (error) {
-      toast.error('Hata oluştu', { id: toastId });
-    } else {
-      toast.success('Görev güncellendi', { id: toastId });
-      setEditingTodo(null);
-      fetchTodos();
-    }
-  };
-
-  const openDeleteModal = (todo: Todo) => {
-    setDeletingTodo(todo);
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingTodo) return;
-
-    const toastId = toast.loading('Siliniyor...');
-
-    setTodos(prev => prev.filter(t => t.id !== deletingTodo.id));
-    await supabase.from('todos').delete().eq('id', deletingTodo.id);
-
-    toast.success("Görev silindi", { id: toastId });
-    setDeletingTodo(null);
-  };
-
-  const openEditModal = (todo: Todo) => {
-    setEditingTodo(todo);
-  };
-
-  // --- FILTERED TODOS BY STATUS ---
   const todoTodos = todos.filter(t => t.status === 'todo');
   const inProgressTodos = todos.filter(t => t.status === 'in_progress');
   const doneTodos = todos.filter(t => t.status === 'done');
-
   const activeTodo = activeId ? todos.find(t => t.id === activeId) : null;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="w-full h-full flex items-center justify-center p-6 animate-fadeIn">
-        <div className="w-full max-w-[95%] h-[85vh] flex flex-col rounded-3xl backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/40 dark:bg-black/40 light:bg-white/90 light:shadow-xl overflow-hidden p-6">
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="w-full h-full flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-zinc-900 dark:text-white tracking-tight">Görevler</h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">Görevlerini sürükle-bırak ile yönet</p>
+        <div className="flex-shrink-0 px-8 py-6 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Görevler</h1>
+              <p className="text-sm text-zinc-500 mt-1">
+                {todos.length} görev · {doneCount} tamamlandı
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500" />
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">{todoCount} yapılacak</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">{inProgressCount} devam ediyor</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">{doneCount} tamamlandı</span>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} /> Yeni Görev
-          </button>
+
+          {/* Progress Bar */}
+          {todos.length > 0 && (
+            <div className="mt-4 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div className="h-full flex">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(doneCount / todos.length) * 100}%` }}
+                  className="bg-emerald-500 h-full"
+                />
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(inProgressCount / todos.length) * 100}%` }}
+                  className="bg-blue-500 h-full"
+                />
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(todoCount / todos.length) * 100}%` }}
+                  className="bg-amber-500 h-full"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Kanban Board */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
-          <div className="flex gap-6 h-full min-w-[1000px]">
-            <DroppableColumn
+        {/* Board */}
+        <div className="flex-1 overflow-x-auto p-6">
+          <div className="flex gap-6 h-full min-w-max">
+            <Column
               title="Yapılacaklar"
               status="todo"
-              icon={Hourglass}
-              color="zinc"
+              icon={Target}
+              color="amber"
               todos={todoTodos}
-              onDelete={openDeleteModal}
-              onEdit={openEditModal}
+              onAddTodo={handleAddTodo}
+              onDeleteTodo={handleDeleteTodo}
+              onUpdateTodo={handleUpdateTodo}
+              onStatusChange={handleStatusChange}
             />
-            <DroppableColumn
-              title="Sürüyor"
+            <Column
+              title="Devam Ediyor"
               status="in_progress"
               icon={Clock}
               color="blue"
               todos={inProgressTodos}
-              onDelete={openDeleteModal}
-              onEdit={openEditModal}
+              onAddTodo={handleAddTodo}
+              onDeleteTodo={handleDeleteTodo}
+              onUpdateTodo={handleUpdateTodo}
+              onStatusChange={handleStatusChange}
             />
-            <DroppableColumn
+            <Column
               title="Tamamlandı"
               status="done"
               icon={CheckCircle2}
               color="emerald"
               todos={doneTodos}
-              onDelete={openDeleteModal}
-              onEdit={openEditModal}
+              onAddTodo={handleAddTodo}
+              onDeleteTodo={handleDeleteTodo}
+              onUpdateTodo={handleUpdateTodo}
+              onStatusChange={handleStatusChange}
             />
           </div>
         </div>
-
-        </div>
       </div>
 
-      {/* Drag Overlay - DndContext içinde ama container dışında olmalı */}
+      {/* Drag Overlay */}
       <DragOverlay dropAnimation={null}>
         {activeTodo ? (
-          <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-white/30 rounded-2xl p-4 shadow-2xl cursor-grabbing">
-            <div className="text-zinc-900 dark:text-white font-semibold text-sm">{activeTodo.title}</div>
+          <div className="bg-white dark:bg-zinc-800 border-2 border-emerald-500 rounded-lg p-3 shadow-2xl cursor-grabbing max-w-[350px]">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />
+              <span className="text-zinc-900 dark:text-white font-medium text-sm">{activeTodo.title}</span>
+            </div>
           </div>
         ) : null}
       </DragOverlay>
-
-      {/* MODAL: YENİ GÖREV */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-white/10 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative"
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-5 right-5 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
-                  <Plus className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                Yeni Görev Oluştur
-              </h2>
-
-              <form onSubmit={handleAddTodo} className="space-y-5">
-                <div>
-                  <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Başlık *</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="Ne yapman gerekiyor?"
-                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
-                    value={newTodo.title}
-                    onChange={e => setNewTodo({ ...newTodo, title: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Açıklama</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Detaylar..."
-                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all resize-none"
-                    value={newTodo.description}
-                    onChange={e => setNewTodo({ ...newTodo, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Öncelik</label>
-                    <select
-                      className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none appearance-none cursor-pointer"
-                      value={newTodo.priority}
-                      onChange={e => setNewTodo({ ...newTodo, priority: e.target.value })}
-                    >
-                      <option value="low">Düşük</option>
-                      <option value="medium">Orta</option>
-                      <option value="high">Yüksek</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Son Tarih</label>
-                    <input
-                      type="date"
-                      className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                      value={newTodo.due_date}
-                      onChange={e => setNewTodo({ ...newTodo, due_date: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-white dark:text-black font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95"
-                  >
-                    Oluştur
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* MODAL: DÜZENLE */}
-      <AnimatePresence>
-        {editingTodo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setEditingTodo(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-white/10 rounded-3xl p-8 w-full max-w-lg shadow-2xl relative"
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setEditingTodo(null)}
-                className="absolute top-5 right-5 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-500/20">
-                  <Edit2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                Görevi Düzenle
-              </h2>
-
-              <form onSubmit={handleEditTodo} className="space-y-5">
-                <div>
-                  <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Başlık *</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="Ne yapman gerekiyor?"
-                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
-                    value={editingTodo.title}
-                    onChange={e => setEditingTodo({ ...editingTodo, title: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Açıklama</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Detaylar..."
-                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all resize-none"
-                    value={editingTodo.description}
-                    onChange={e => setEditingTodo({ ...editingTodo, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Öncelik</label>
-                    <select
-                      className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none appearance-none cursor-pointer"
-                      value={editingTodo.priority}
-                      onChange={e => setEditingTodo({ ...editingTodo, priority: e.target.value as "low" | "medium" | "high" })}
-                    >
-                      <option value="low">Düşük</option>
-                      <option value="medium">Orta</option>
-                      <option value="high">Yüksek</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 block">Son Tarih</label>
-                    <input
-                      type="date"
-                      className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-zinc-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                      value={editingTodo.due_date || ''}
-                      onChange={e => setEditingTodo({ ...editingTodo, due_date: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-400 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 active:scale-95"
-                  >
-                    Güncelle
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* MODAL: SİLME ONAY */}
-      <AnimatePresence>
-        {deletingTodo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setDeletingTodo(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-[#121212] border border-red-200 dark:border-red-500/20 rounded-3xl p-8 w-full max-w-md shadow-2xl relative"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="text-center">
-                {/* İkon */}
-                <div className="mx-auto w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-500/20 border-2 border-red-200 dark:border-red-500/30 flex items-center justify-center mb-4">
-                  <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400" />
-                </div>
-
-                {/* Başlık */}
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
-                  Görevi Sil
-                </h2>
-
-                {/* Açıklama */}
-                <p className="text-zinc-600 dark:text-zinc-400 mb-2">
-                  Bu görevi silmek istediğinden emin misin?
-                </p>
-
-                {/* Görev Bilgisi */}
-                <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-xl p-4 mb-6 text-left">
-                  <h3 className="text-zinc-900 dark:text-white font-semibold text-sm mb-1">{deletingTodo.title}</h3>
-                  {deletingTodo.description && (
-                    <p className="text-zinc-500 text-xs line-clamp-2">{deletingTodo.description}</p>
-                  )}
-                </div>
-
-                {/* Butonlar */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setDeletingTodo(null)}
-                    className="flex-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-bold py-3.5 rounded-xl transition-all active:scale-95"
-                  >
-                    İptal
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    className="flex-1 bg-red-500 hover:bg-red-600 dark:hover:bg-red-400 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 active:scale-95"
-                  >
-                    Evet, Sil
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </DndContext>
   );
 }

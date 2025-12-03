@@ -42,6 +42,11 @@ export default function NoteEditor({ note, onClose, onRefresh }: NoteEditorProps
       formData.append("content", content);
 
       await updateNote(formData);
+      
+      // Cache'i invalidate et - tüm sayfalarda güncel veri görünsün
+      const { invalidateCache } = await import('@/components/DataPreloader');
+      invalidateCache('notes');
+      
       setLastSaved(new Date());
       if (onRefresh) {
         onRefresh();

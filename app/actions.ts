@@ -303,12 +303,18 @@ export async function updateNote(formData: FormData) {
 
   if (!id) throw new Error("Güncellenecek not ID'si eksik");
 
-  await supabase
+  const { error } = await supabase
     .from("notes")
-    .update({ title, content })
+    .update({ title, content, updated_at: new Date().toISOString() })
     .match({ id, user_id: user.id });
 
+  if (error) {
+    console.error("Not güncelleme hatası:", error);
+    throw new Error("Not güncellenemedi: " + error.message);
+  }
+
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/notes");
 }
 
 // Delete Note

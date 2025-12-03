@@ -30,3 +30,4 @@ CREATE INDEX IF NOT EXISTS idx_market_watchlist_user_id ON market_watchlist(user
 CREATE INDEX IF NOT EXISTS idx_market_watchlist_symbol ON market_watchlist(symbol);
 
 
+

@@ -49,7 +49,7 @@ export default function TodosPage() {
   }, [loadTodos]);
 
   return (
-    <div className="w-full h-full pt-6">
+    <div className="w-full h-full">
       <TodosPageManager todos={todos} onRefresh={loadTodos} />
     </div>
   );

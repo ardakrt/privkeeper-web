@@ -628,7 +628,17 @@ export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) 
                   </p>
                   <button
                     type="button"
-                    onClick={() => setStep("emailInput")}
+                    onClick={() => {
+                      // Email ve kullanıcı bilgilerini sıfırla
+                      setEmail("");
+                      setUserName(null);
+                      setAvatarUrl(null);
+                      setPin(["", "", "", "", "", ""]);
+                      setError(null);
+                      setStep("emailInput");
+                      // URL'deki email parametresini temizle
+                      router.replace("/login", { scroll: false });
+                    }}
                     className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
                   >
                     Yoksa {capitalizeFirstLetter(userName)} değil misin?

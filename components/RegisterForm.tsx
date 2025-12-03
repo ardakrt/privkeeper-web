@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { completeRegistration } from "@/app/actions";
-import { sendVerificationCode, verifyDeviceCode } from "@/app/auth-actions";
+import { sendVerificationCode, verifyAndCompleteRegistration } from "@/app/auth-actions";
 import { motion, AnimatePresence, easeOut, easeIn } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 
@@ -167,7 +166,7 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
     }
   }
 
-  // Final Registration (Verify Code + Set Data)
+  // Final Registration (Verify Code + Set Data in one action)
   async function handleFinalRegister() {
     const code = verificationCode.join("");
     if (code.length !== 6) return;
@@ -176,22 +175,23 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
     setError(null);
 
     try {
-      // 1. Verify Code (This logs the user in on server side)
-      const verifyRes = await verifyDeviceCode(email, code, "registration-device");
+      // Verify and complete registration in one server action
+      const result = await verifyAndCompleteRegistration(
+        email,
+        code,
+        name,
+        pin.join(""),
+        avatarFile
+      );
       
-      if (!verifyRes.success) {
-        throw new Error(verifyRes.message || "Kod hatalı");
+      if (!result.success) {
+        throw new Error(result.message || "Kayıt tamamlanamadı");
       }
 
-      // 2. Complete Registration (Update Name, PIN, Avatar)
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("pin", pin.join(""));
-      if (avatarFile) {
-        formData.append("avatar", avatarFile);
+      // Redirect to dashboard
+      if (result.redirect) {
+        window.location.href = result.redirect;
       }
-      
-      await completeRegistration(formData); 
 
     } catch (err: any) {
       setLoading(false);

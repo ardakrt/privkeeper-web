@@ -159,7 +159,7 @@ export default function FloatingSidebar() {
           - 'pb-8': Alt taraftan ekstra boşluk bıraktık ki butonlar kavisli köşeye çarpmasın.
           - 'gap-3': Butonlar arası boşluğu biraz azalttık, daha derli toplu olsun.
       */}
-      <div className="relative z-10 p-4 pb-8 flex flex-col gap-3">
+      <div className="relative z-10 p-4 pb-8 flex flex-col gap-2">
 
         {/* Toggle Button */}
         <button
@@ -171,7 +171,7 @@ export default function FloatingSidebar() {
             transition-all duration-300 group
           `}
         >
-          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={20} />}
         </button>
 
         {/* Tema Ayarı */}

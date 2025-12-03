@@ -62,7 +62,110 @@ export async function verifyDeviceCode(email: string, code: string, deviceId: st
     maxAge: 3 * 24 * 60 * 60, // 3 days
   });
 
-  return { success: true };
+  return { success: true, userId: data.user?.id };
+}
+
+// Verify OTP and Complete Registration in one go
+export async function verifyAndCompleteRegistration(
+  email: string, 
+  code: string, 
+  name: string, 
+  pin: string,
+  avatarFile?: File | null
+) {
+  const supabase = await createSupabaseServerClient();
+  
+  // 1. Verify the OTP
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: "email",
+  });
+
+  if (error) {
+    console.error("Verification Error:", error);
+    return { success: false, message: "Geçersiz veya süresi dolmuş kod" };
+  }
+
+  if (!data.session || !data.user) {
+    return { success: false, message: "Doğrulama başarısız oldu" };
+  }
+
+  const userId = data.user.id;
+
+  // 2. Validate PIN
+  const cleanPin = pin.replace(/\D/g, "");
+  if (!/^\d{6}$/.test(cleanPin)) {
+    return { success: false, message: "PIN 6 haneli olmalı" };
+  }
+
+  try {
+    // 3. Update User Password (PIN) and Metadata
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: cleanPin,
+      data: {
+        full_name: name,
+        name: name,
+      }
+    });
+
+    if (updateError) {
+      console.error("Update user error:", updateError);
+      return { success: false, message: "Kullanıcı bilgileri güncellenemedi" };
+    }
+
+    // 4. Create User Preferences
+    const bcrypt = await import("bcryptjs");
+    const hashedPin = await bcrypt.hash(cleanPin, 10);
+    
+    const { error: prefError } = await supabase
+      .from("user_preferences")
+      .upsert({
+        user_id: userId,
+        pin: hashedPin,
+        theme_mode_web: "dark",
+        theme_mode_mobile: "dark",
+      }, { onConflict: "user_id" });
+
+    if (prefError) {
+      console.error("Tercih oluşturma hatası:", prefError);
+    }
+
+    // 5. Avatar Upload (if provided)
+    if (avatarFile && avatarFile.size > 0) {
+      const fileExt = avatarFile.name.split(".").pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, avatarFile);
+
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+          
+        await supabase.auth.updateUser({
+          data: { avatar_url: publicUrlData.publicUrl }
+        });
+      }
+    }
+
+    // 6. Set device verified cookie
+    const cookieStore = await cookies();
+    cookieStore.set("device_verified", "true", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 3 * 24 * 60 * 60,
+    });
+
+    return { success: true, redirect: "/dashboard" };
+
+  } catch (err: any) {
+    console.error("Registration completion error:", err);
+    return { success: false, message: "Kayıt tamamlanamadı: " + (err.message || "Bilinmeyen hata") };
+  }
 }
 
 export async function checkDeviceVerification() {

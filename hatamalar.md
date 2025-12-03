@@ -1,8 +1,8 @@
 
-bazen tema değişirken 2 kere tıklamak gerekiyor
 
+getaddrinfo ENOTFOUND 399c4e7793224e78"0541d5edf97abf10.eu.r2.cloudflarestorage.com notlara resim eklerken hata 
 
-
+Dashboard'da not içeriği düzgün görünmüyor
 
 
 

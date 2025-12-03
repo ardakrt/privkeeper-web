@@ -9,6 +9,7 @@ type Note = {
   title?: string | null;
   content?: string | null;
   created_at?: string | null;
+  updated_at?: string | null;
 };
 
 interface NoteItemProps {
@@ -32,6 +33,12 @@ export default function NoteItem({
   onTriggerDeleteAll,
   onContextMenu
 }: NoteItemProps) {
+  // HTML etiketlerini temizle (önizleme için)
+  const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return "";
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "";
     try {
@@ -128,17 +135,17 @@ export default function NoteItem({
 
         {/* Content Preview */}
         <p className="text-zinc-500 dark:text-zinc-500 light:text-zinc-600 text-sm leading-relaxed flex-1 whitespace-pre-wrap line-clamp-3">
-          {note.content ?? "İçerik yok"}
+          {stripHtml(note.content) || "İçerik yok"}
         </p>
 
-        {/* Footer - Date */}
-        {note.created_at && (
+        {/* Footer - Date (updated_at veya created_at) */}
+        {(note.updated_at || note.created_at) && (
           <div className="mt-4 pt-3 border-t border-white/[0.05] dark:border-white/[0.05] light:border-zinc-200 flex items-center justify-end">
             <span className="text-xs text-zinc-600 dark:text-zinc-600 light:text-zinc-500 flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {formatDate(note.created_at)}
+              {formatDate(note.updated_at || note.created_at)}
             </span>
           </div>
         )}
