@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Sun, Moon, Globe, Bell, Shield, Loader2, Check, Share2, Trash2, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@supabase/supabase-js';
@@ -33,11 +33,17 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
   // Wallet PIN States
   const [walletPinEnabled, setWalletPinEnabled] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [confirmPinInput, setConfirmPinInput] = useState('');
-  const [showPin, setShowPin] = useState(false);
+  const [pinInput, setPinInput] = useState(["", "", "", "", "", ""]);
+  const [confirmPinInput, setConfirmPinInput] = useState(["", "", "", "", "", ""]);
+  // showPin is no longer needed for individual digit boxes usually, but we can keep or remove. 
+  // Usually digit boxes don't have eye icon, they are password type.
+  const [showPin, setShowPin] = useState(false); 
   const [pinMode, setPinMode] = useState<'set' | 'change' | 'disable'>('set');
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
+
+  // Refs for inputs
+  const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const confirmPinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
   const handleDeleteAccount = async () => {
     if (!confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
@@ -95,12 +101,12 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
   const handleWalletPinToggle = () => {
     if (!walletPinEnabled) {
       setPinMode('set');
-      setPinInput('');
-      setConfirmPinInput('');
+      setPinInput(["", "", "", "", "", ""]);
+      setConfirmPinInput(["", "", "", "", "", ""]);
       setShowPinModal(true);
     } else {
       setPinMode('disable');
-      setPinInput('');
+      setPinInput(["", "", "", "", "", ""]);
       setShowPinModal(true);
     }
   };
@@ -109,12 +115,15 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
     if (!user) return;
     const supabase = createBrowserClient();
 
+    const fullPin = pinInput.join("");
+    const fullConfirm = confirmPinInput.join("");
+
     if (pinMode === 'set' || pinMode === 'change') {
-      if (pinInput.length < 4) {
-        toast.error('PIN en az 4 haneli olmalıdır');
+      if (fullPin.length < 6) {
+        toast.error('PIN 6 haneli olmalıdır');
         return;
       }
-      if (pinInput !== confirmPinInput) {
+      if (fullPin !== fullConfirm) {
         toast.error('PIN\'ler eşleşmiyor');
         return;
       }
@@ -129,7 +138,7 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
           .eq('user_id', user.id)
           .single();
 
-        if (pref?.wallet_pin !== pinInput) {
+        if (pref?.wallet_pin !== fullPin) {
           toast.error('Yanlış PIN');
           setIsUpdatingPin(false);
           return;
@@ -145,7 +154,7 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
       } else {
         await supabase
           .from('user_preferences')
-          .update({ wallet_pin_enabled: true, wallet_pin: pinInput })
+          .update({ wallet_pin_enabled: true, wallet_pin: fullPin })
           .eq('user_id', user.id);
 
         setWalletPinEnabled(true);
@@ -153,8 +162,8 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
       }
 
       setShowPinModal(false);
-      setPinInput('');
-      setConfirmPinInput('');
+      setPinInput(["", "", "", "", "", ""]);
+      setConfirmPinInput(["", "", "", "", "", ""]);
     } catch (error) {
       console.error('PIN ayarlama hatası:', error);
       toast.error('Bir hata oluştu');
@@ -163,12 +172,50 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
     }
   };
 
-  const handlePinInputChange = (value: string, field: 'pin' | 'confirm') => {
-    const numericValue = value.replace(/\D/g, '').slice(0, 6);
-    if (field === 'pin') {
-      setPinInput(numericValue);
-    } else {
-      setConfirmPinInput(numericValue);
+  // Helper functions for PIN inputs
+  const handleDigitChange = (
+    index: number,
+    value: string,
+    state: string[],
+    setState: React.Dispatch<React.SetStateAction<string[]>>,
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    if (value && !/^\d$/.test(value)) return;
+    const newState = [...state];
+    newState[index] = value;
+    setState(newState);
+    if (value && index < 5) {
+      refs[index + 1].current?.focus();
+    }
+  };
+
+  const handleDigitKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+    state: string[],
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    if (e.key === "Backspace" && !state[index] && index > 0) {
+      refs[index - 1].current?.focus();
+    }
+  };
+
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    setState: React.Dispatch<React.SetStateAction<string[]>>,
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    if (/^\d+$/.test(pastedData)) {
+      const digits = pastedData.split("").slice(0, 6);
+      const newPin = Array(6).fill("");
+      digits.forEach((digit, i) => {
+        if (i < 6) newPin[i] = digit;
+      });
+      setState(newPin);
+      const nextIndex = digits.length < 6 ? digits.length : 5;
+      refs[nextIndex].current?.focus();
     }
   };
 
@@ -506,62 +553,50 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div>
-                      <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block">
+                      <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block text-center uppercase tracking-wider">
                         {pinMode === 'disable' ? 'Mevcut PIN' : 'PIN'}
                       </label>
-                      <div className="relative">
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={pinInput}
-                          onChange={(e) => handlePinInputChange(e.target.value, 'pin')}
-                          placeholder="••••"
-                          maxLength={6}
-                          autoComplete="new-password"
-                          name="wallet-pin-new"
-                          id="wallet-pin-new"
-                          data-form-type="other"
-                          data-lpignore="true"
-                          data-1p-ignore="true"
-                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500"
-                          style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' } as React.CSSProperties}
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPin(!showPin)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                        >
-                          {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                      <div className="flex justify-center gap-2">
+                        {pinInput.map((digit, index) => (
+                          <input
+                            key={index}
+                            ref={pinRefs[index]}
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleDigitChange(index, e.target.value, pinInput, setPinInput, pinRefs)}
+                            onKeyDown={(e) => handleDigitKeyDown(index, e, pinInput, pinRefs)}
+                            onPaste={(e) => handlePaste(e, setPinInput, pinRefs)}
+                            className="w-12 h-14 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                          />
+                        ))}
                       </div>
                     </div>
 
                     {(pinMode === 'set' || pinMode === 'change') && (
                       <div>
-                        <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block">
+                        <label className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mb-2 block text-center uppercase tracking-wider">
                           PIN&apos;i Tekrarla
                         </label>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={confirmPinInput}
-                          onChange={(e) => handlePinInputChange(e.target.value, 'confirm')}
-                          placeholder="••••"
-                          maxLength={6}
-                          autoComplete="new-password"
-                          name="wallet-pin-confirm"
-                          id="wallet-pin-confirm"
-                          data-form-type="other"
-                          data-lpignore="true"
-                          data-1p-ignore="true"
-                          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500"
-                          style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' } as React.CSSProperties}
-                        />
+                        <div className="flex justify-center gap-2">
+                          {confirmPinInput.map((digit, index) => (
+                            <input
+                              key={index}
+                              ref={confirmPinRefs[index]}
+                              type="password"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleDigitChange(index, e.target.value, confirmPinInput, setConfirmPinInput, confirmPinRefs)}
+                              onKeyDown={(e) => handleDigitKeyDown(index, e, confirmPinInput, confirmPinRefs)}
+                              onPaste={(e) => handlePaste(e, setConfirmPinInput, confirmPinRefs)}
+                              className="w-12 h-14 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                            />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

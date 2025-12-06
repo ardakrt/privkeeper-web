@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Plus, Search, RefreshCw, Eye, DollarSign, Coins } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Search, RefreshCw, Eye, DollarSign, Coins, PieChart } from 'lucide-react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -31,6 +31,7 @@ interface Asset {
   change24h: number;
   icon: string;
   color: string;
+  category?: 'currency' | 'gold' | 'crypto';
   chartData: { value: number }[];
 }
 
@@ -65,7 +66,7 @@ export default function MarketsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   // isLoading removed as it wasn't used effectively
-  const [activeTab, setActiveTab] = useState<'watchlist' | 'currencies' | 'golds' | 'crypto'>('watchlist');
+  const [activeTab, setActiveTab] = useState<'watchlist' | 'portfolio' | 'currencies' | 'golds' | 'crypto'>('watchlist');
   const [watchlist, setWatchlist] = useState<string[]>([]);
   // watchlistLoading removed as unused
 
@@ -284,6 +285,17 @@ export default function MarketsPage() {
     );
   }, [assets, searchQuery]);
 
+  // Filter cryptos for market view
+  const filteredCryptos = useMemo(() => {
+    if (!marketData?.cryptos) return [];
+    if (!searchQuery) return marketData.cryptos;
+    const query = searchQuery.toLowerCase();
+    return marketData.cryptos.filter(c => 
+      c.name.toLowerCase().includes(query) || 
+      c.code.toLowerCase().includes(query)
+    );
+  }, [marketData, searchQuery]);
+
   // Save asset
   const handleSaveAsset = async (assetData: Omit<Asset, 'id' | 'chartData'> & { id?: string }) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -300,6 +312,7 @@ export default function MarketsPage() {
           amount: assetData.amount,
           price: assetData.price,
           change24h: assetData.change24h,
+          category: assetData.category,
         })
         .eq('id', assetData.id);
 
@@ -326,6 +339,7 @@ export default function MarketsPage() {
           amount: assetData.amount,
           price: assetData.price,
           change24h: assetData.change24h,
+          category: assetData.category,
         })
         .select()
         .single();
@@ -410,7 +424,7 @@ export default function MarketsPage() {
                 <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
               </button>
               <button 
-                onClick={() => { setEditingAsset(null); setIsModalOpen(true); setActiveTab('crypto'); }}
+                onClick={() => { setEditingAsset(null); setIsModalOpen(true); setActiveTab('portfolio'); }}
                 className="bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white hover:bg-zinc-200 dark:hover:bg-zinc-200 light:hover:bg-black px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
               >
                 <Plus size={16} />
@@ -462,6 +476,17 @@ export default function MarketsPage() {
                 )}
               </button>
               <button
+                onClick={() => setActiveTab('portfolio')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  activeTab === 'portfolio' 
+                    ? 'bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white shadow' 
+                    : 'text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900'
+                }`}
+              >
+                <PieChart size={16} />
+                Portföy
+              </button>
+              <button
                 onClick={() => setActiveTab('currencies')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === 'currencies' 
@@ -495,7 +520,7 @@ export default function MarketsPage() {
               </button>
             </div>
             
-            {activeTab === 'crypto' && (
+            {(activeTab === 'crypto' || activeTab === 'portfolio') && (
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <input
@@ -608,10 +633,10 @@ export default function MarketsPage() {
                 </motion.div>
               )}
 
-              {/* Crypto Tab */}
-              {activeTab === 'crypto' && (
+              {/* Portfolio Tab */}
+              {activeTab === 'portfolio' && (
                 <motion.div
-                  key="crypto"
+                  key="portfolio"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -625,19 +650,19 @@ export default function MarketsPage() {
                         onEdit={handleEditAsset}
                         onDelete={handleDeleteAsset}
                         isInWatchlist={watchlist.includes(asset.symbol)}
-                        onToggleWatchlist={() => toggleWatchlist(asset.symbol, 'crypto')}
+                        onToggleWatchlist={() => toggleWatchlist(asset.symbol, asset.category || 'currency')}
                       />
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center py-12">
                       <div className="w-16 h-16 rounded-2xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 flex items-center justify-center mb-4">
-                        <TrendingUp size={32} className="text-zinc-500" />
+                        <PieChart size={32} className="text-zinc-500" />
                       </div>
                       <p className="text-lg font-medium text-zinc-400 dark:text-zinc-400 light:text-zinc-600">
-                        {searchQuery ? 'Sonuç bulunamadı' : 'Henüz kripto varlık eklenmedi'}
+                        {searchQuery ? 'Sonuç bulunamadı' : 'Henüz varlık eklenmedi'}
                       </p>
                       <p className="text-sm text-zinc-500 mt-2">
-                        {searchQuery ? 'Farklı bir arama deneyin' : 'Portföyünüze kripto varlıklar ekleyin'}
+                        {searchQuery ? 'Farklı bir arama deneyin' : 'Portföyünüze döviz, altın veya kripto ekleyin'}
                       </p>
                       {!searchQuery && (
                         <button
@@ -648,6 +673,44 @@ export default function MarketsPage() {
                           İlk Varlığını Ekle
                         </button>
                       )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Crypto Tab */}
+              {activeTab === 'crypto' && (
+                <motion.div
+                  key="crypto"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="space-y-2"
+                >
+                  {isMarketLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+                    </div>
+                  ) : filteredCryptos.length > 0 ? (
+                    filteredCryptos.map((item) => (
+                      <MarketItemRow 
+                        key={item.code} 
+                        item={{
+                          code: item.code,
+                          name: item.name,
+                          buying: item.priceTRY,
+                          selling: item.priceTRY,
+                          change: item.change
+                        }} 
+                        config={{ icon: '₿', color: '#F7931A', category: 'crypto' }} 
+                        isInWatchlist={watchlist.includes(item.code)}
+                        onToggleWatchlist={() => toggleWatchlist(item.code, 'crypto')}
+                      />
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <TrendingUp size={48} className="text-zinc-500 mb-4" />
+                      <p className="text-zinc-400">Kripto verisi bulunamadı</p>
                     </div>
                   )}
                 </motion.div>

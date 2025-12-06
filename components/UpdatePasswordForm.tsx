@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { updateUserPassword } from "@/app/actions";
 import { toast } from "react-hot-toast";
-import { AlertCircle, CheckCircle2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UpdatePasswordFormProps {
@@ -16,6 +16,9 @@ export default function UpdatePasswordForm({ onBack }: UpdatePasswordFormProps) 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createBrowserClient();
 
@@ -90,40 +93,61 @@ export default function UpdatePasswordForm({ onBack }: UpdatePasswordFormProps) 
             {/* Current Password */}
             <div className="relative group">
               <input
-                type="password"
+                type={showCurrent ? "text" : "password"}
                 placeholder="Mevcut Parola"
-                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all pr-12"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-white transition-colors"
+              >
+                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
             {/* New Password */}
             <div className="relative group">
               <input
                 name="new_password"
-                type="password"
+                type={showNew ? "text" : "password"}
                 placeholder="Yeni Parola"
-                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all pr-12"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-white transition-colors"
+              >
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
             {/* Confirm New Password */}
             <div className="relative group">
               <input
-                type="password"
+                type={showConfirm ? "text" : "password"}
                 placeholder="Yeni Parola (Tekrar)"
-                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full h-12 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all pr-12"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-white transition-colors"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 

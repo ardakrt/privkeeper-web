@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Lock, CheckCircle2, AlertCircle } from "lucide-react";
@@ -11,26 +11,89 @@ interface UpdatePinFormProps {
 }
 
 export default function UpdatePinForm({ onBack }: UpdatePinFormProps) {
-  const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [pin, setPin] = useState(["", "", "", "", "", ""]);
+  const [confirmPin, setConfirmPin] = useState(["", "", "", "", "", ""]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setter(val);
+  // Refs for focus management
+  const pinRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  const confirmPinRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  const handlePinChange = (
+    index: number,
+    value: string,
+    state: string[],
+    setState: React.Dispatch<React.SetStateAction<string[]>>,
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    if (value && !/^\d$/.test(value)) return;
+    const newPin = [...state];
+    newPin[index] = value;
+    setState(newPin);
+    if (value && index < 5) {
+      refs[index + 1].current?.focus();
+    }
+  };
+
+  const handlePinKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+    state: string[],
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    if (e.key === "Backspace" && !state[index] && index > 0) {
+      refs[index - 1].current?.focus();
+    }
+  };
+
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    setState: React.Dispatch<React.SetStateAction<string[]>>,
+    refs: React.MutableRefObject<HTMLInputElement | null>[]
+  ) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    if (/^\d+$/.test(pastedData)) {
+      const digits = pastedData.split("").slice(0, 6);
+      const newPin = Array(6).fill("");
+      digits.forEach((digit, i) => {
+        if (i < 6) newPin[i] = digit;
+      });
+      setState(newPin);
+      const nextIndex = digits.length < 6 ? digits.length : 5;
+      refs[nextIndex].current?.focus();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (pin.length !== 6) {
+    const fullPin = pin.join("");
+    const fullConfirmPin = confirmPin.join("");
+
+    if (fullPin.length !== 6) {
       setErrorMessage("PIN kodu 6 haneli olmalıdır.");
       return;
     }
 
-    if (pin !== confirmPin) {
+    if (fullPin !== fullConfirmPin) {
       setErrorMessage("PIN kodları eşleşmiyor.");
       return;
     }
@@ -39,8 +102,8 @@ export default function UpdatePinForm({ onBack }: UpdatePinFormProps) {
     setErrorMessage(null);
 
     const formData = new FormData();
-    formData.append("new_pin", pin);
-    formData.append("confirm_pin", confirmPin);
+    formData.append("new_pin", fullPin);
+    formData.append("confirm_pin", fullConfirmPin);
     // Ekstra parametre: Sadece PIN hash'ini güncelle
     formData.append("update_auth_password", "false");
 
@@ -109,34 +172,48 @@ export default function UpdatePinForm({ onBack }: UpdatePinFormProps) {
           Güvenliğiniz için 6 haneli yeni bir kod oluşturun.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div className="space-y-4">
             {/* PIN */}
-            <div className="relative group">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={pin}
-                onChange={(e) => handlePinChange(e, setPin)}
-                placeholder="Yeni PIN"
-                className="w-full h-14 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center text-lg font-medium tracking-widest"
-                required
-              />
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 text-center uppercase tracking-wider">Yeni PIN</label>
+              <div className="flex justify-center gap-2">
+                {pin.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={pinRefs[index]}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handlePinChange(index, e.target.value, pin, setPin, pinRefs)}
+                    onKeyDown={(e) => handlePinKeyDown(index, e, pin, pinRefs)}
+                    onPaste={(e) => handlePaste(e, setPin, pinRefs)}
+                    className="w-12 h-14 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Confirm PIN */}
-            <div className="relative group">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={confirmPin}
-                onChange={(e) => handlePinChange(e, setConfirmPin)}
-                placeholder="PIN Tekrar"
-                className="w-full h-14 px-4 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center text-lg font-medium tracking-widest"
-                required
-              />
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 text-center uppercase tracking-wider">PIN Tekrar</label>
+              <div className="flex justify-center gap-2">
+                {confirmPin.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={confirmPinRefs[index]}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handlePinChange(index, e.target.value, confirmPin, setConfirmPin, confirmPinRefs)}
+                    onKeyDown={(e) => handlePinKeyDown(index, e, confirmPin, confirmPinRefs)}
+                    onPaste={(e) => handlePaste(e, setConfirmPin, confirmPinRefs)}
+                    className="w-12 h-14 bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
@@ -153,7 +230,7 @@ export default function UpdatePinForm({ onBack }: UpdatePinFormProps) {
 
           <button
             type="submit"
-            disabled={status === "loading" || pin.length !== 6 || confirmPin.length !== 6}
+            disabled={status === "loading" || pin.join("").length !== 6 || confirmPin.join("").length !== 6}
             className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-semibold text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.98]"
           >
             {status === "loading" ? (

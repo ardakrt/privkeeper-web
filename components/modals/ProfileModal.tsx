@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, User, Lock, Camera, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { X, User, Lock, Camera, Check, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -47,12 +47,17 @@ export default function ProfileModal({ isOpen, onClose, user, onUpdate }: Profil
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // PIN States
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
   const [securityTab, setSecurityTab] = useState<'password' | 'pin'>('password');
+
+  const newPinRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const confirmPinRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // ESC tuşu ile kapatma
   useEffect(() => {
@@ -712,12 +717,19 @@ export default function ProfileModal({ isOpen, onClose, user, onUpdate }: Profil
                     <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest ml-1">Yeni Parola</label>
                     <div className="relative group w-full">
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={newPassword || ''}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-12 pl-4 pr-4 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                        className="w-full h-12 pl-4 pr-12 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
 
@@ -726,12 +738,19 @@ export default function ProfileModal({ isOpen, onClose, user, onUpdate }: Profil
                     <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest ml-1">Parola Tekrar</label>
                     <div className="relative group w-full">
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword || ''}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-12 pl-4 pr-4 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                        className="w-full h-12 pl-4 pr-12 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors focus:outline-none"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -766,39 +785,91 @@ export default function ProfileModal({ isOpen, onClose, user, onUpdate }: Profil
                 <div className="space-y-6">
                   {/* New PIN */}
                   <div className="space-y-3">
-                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest ml-1">Yeni PIN</label>
-                    <div className="relative group w-full">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={newPin || ''}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setNewPin(val);
-                        }}
-                        placeholder="••••••"
-                        className="w-full h-12 pl-4 pr-4 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm text-center tracking-[0.5em] focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 placeholder:tracking-[0.3em]"
-                      />
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest text-center">Yeni PIN</label>
+                    <div className="flex gap-2 justify-center">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <input
+                          key={i}
+                          ref={(el) => { newPinRefs.current[i] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={newPin[i] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            const char = val.slice(-1);
+                            let currentArr = newPin.split('');
+                            while (currentArr.length < i) currentArr.push('');
+                            currentArr[i] = char;
+                            setNewPin(currentArr.join('').slice(0, 6));
+                            if (char && i < 5) newPinRefs.current[i + 1]?.focus();
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace') {
+                              if (!newPin[i] && i > 0) {
+                                e.preventDefault();
+                                const arr = newPin.split('');
+                                if (i - 1 < arr.length) {
+                                  arr[i - 1] = '';
+                                  setNewPin(arr.join(''));
+                                }
+                                newPinRefs.current[i - 1]?.focus();
+                              }
+                            }
+                          }}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                            setNewPin(pasted);
+                          }}
+                          className="w-12 h-14 text-center text-xl font-bold bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white focus:border-zinc-900 dark:focus:border-white focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none transition-all"
+                        />
+                      ))}
                     </div>
                   </div>
 
                   {/* Confirm PIN */}
                   <div className="space-y-3">
-                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest ml-1">PIN Tekrar</label>
-                    <div className="relative group w-full">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={confirmPin || ''}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setConfirmPin(val);
-                        }}
-                        placeholder="••••••"
-                        className="w-full h-12 pl-4 pr-4 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white text-sm text-center tracking-[0.5em] focus:border-zinc-400 dark:focus:border-white/30 focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none focus:ring-0 transition-all duration-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 placeholder:tracking-[0.3em]"
-                      />
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-500 uppercase tracking-widest text-center">PIN Tekrar</label>
+                    <div className="flex gap-2 justify-center">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <input
+                          key={i}
+                          ref={(el) => { confirmPinRefs.current[i] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={confirmPin[i] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            const char = val.slice(-1);
+                            let currentArr = confirmPin.split('');
+                            while (currentArr.length < i) currentArr.push('');
+                            currentArr[i] = char;
+                            setConfirmPin(currentArr.join('').slice(0, 6));
+                            if (char && i < 5) confirmPinRefs.current[i + 1]?.focus();
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace') {
+                              if (!confirmPin[i] && i > 0) {
+                                e.preventDefault();
+                                const arr = confirmPin.split('');
+                                if (i - 1 < arr.length) {
+                                  arr[i - 1] = '';
+                                  setConfirmPin(arr.join(''));
+                                }
+                                confirmPinRefs.current[i - 1]?.focus();
+                              }
+                            }
+                          }}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                            setConfirmPin(pasted);
+                          }}
+                          className="w-12 h-14 text-center text-xl font-bold bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-300 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white focus:border-zinc-900 dark:focus:border-white focus:bg-zinc-50 dark:focus:bg-zinc-900/50 focus:outline-none transition-all"
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
