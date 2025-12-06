@@ -57,6 +57,9 @@ export default function NotesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
   
+  // Ref to track last saved state to prevent unnecessary saves
+  const lastSavedRef = useRef<{title: string, content: string, attachments: Attachment[] | null}>({ title: '', content: '', attachments: [] });
+  
   const supabase = createBrowserClient();
 
   // Load notes with Cache/Store strategy
@@ -115,6 +118,13 @@ export default function NotesPage() {
     setContent(note.content || '');
     setAttachments(note.attachments || []);
     setSaveStatus('saved');
+    
+    // Update ref to current note state
+    lastSavedRef.current = {
+      title: note.title || '',
+      content: note.content || '',
+      attachments: note.attachments || []
+    };
   };
 
   // Create new note with animation
@@ -221,6 +231,15 @@ export default function NotesPage() {
   // Save note
   const saveNote = useCallback(async () => {
     if (!selectedNoteId) return;
+    
+    // Check if there are actual changes
+    const isUnchanged = 
+      title === lastSavedRef.current.title && 
+      content === lastSavedRef.current.content &&
+      JSON.stringify(attachments) === JSON.stringify(lastSavedRef.current.attachments);
+
+    if (isUnchanged) return;
+
     if (!title && !content && attachments.length === 0) return;
 
     setSaveStatus('saving');
@@ -255,14 +274,20 @@ export default function NotesPage() {
       }
 
       // Update both local state and store
-      const updatedNotes = notes.map(n => 
+      setNotes(prev => prev.map(n => 
         n.id === selectedNoteId 
           ? { ...n, ...noteData }
           : n
-      );
+      ));
       
-      setNotes(updatedNotes);
       updateNote(selectedNoteId, noteData);
+
+      // Update reference
+      lastSavedRef.current = { 
+        title, 
+        content, 
+        attachments 
+      };
 
       // Update Cache for persistence across reloads
       invalidateCache('notes');
@@ -273,7 +298,7 @@ export default function NotesPage() {
       setSaveStatus('error');
       toast.error('Not kaydedilirken bir hata oluştu');
     }
-  }, [title, content, attachments, selectedNoteId, supabase, updateNote, notes]);
+  }, [title, content, attachments, selectedNoteId, supabase, updateNote]);
 
   // Auto-save
   useEffect(() => {
