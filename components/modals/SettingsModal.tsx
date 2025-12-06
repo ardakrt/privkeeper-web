@@ -478,8 +478,8 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
                 <button
                   onClick={() => {
                     setPinMode('change');
-                    setPinInput('');
-                    setConfirmPinInput('');
+                    setPinInput(["", "", "", "", "", ""]);
+                    setConfirmPinInput(["", "", "", "", "", ""]);
                     setShowPinModal(true);
                   }}
                   className="ml-4 text-sm text-emerald-500 hover:text-emerald-400 transition-colors"
@@ -605,8 +605,8 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
                     <button
                       onClick={() => {
                         setShowPinModal(false);
-                        setPinInput('');
-                        setConfirmPinInput('');
+                        setPinInput(["", "", "", "", "", ""]);
+                        setConfirmPinInput(["", "", "", "", "", ""]);
                       }}
                       className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                     >
