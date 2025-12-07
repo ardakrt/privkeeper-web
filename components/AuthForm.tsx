@@ -17,6 +17,24 @@ import { toast } from "react-hot-toast";
   // Find the "Forgot Password" link. It should be near the password input.
   // Assuming step === "password" or similar.
 
+// Import Refactored Components
+import StepEmail from "./auth/StepEmail";
+import StepPassword from "./auth/StepPassword";
+import Step2FA from "./auth/Step2FA";
+
+type Step = "emailInput" | "passwordInput" | "pushWaiting" | "verificationInput";
+
+interface AuthFormProps {
+  initialEmail?: string;
+  onStepChange?: (step: Step) => void;
+}
+
+export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) {
+  const router = useRouter();
+  const supabase = createBrowserClient();
+  const { setTheme } = useTheme();
+  const { requestPushLogin, isWaiting, error: pushError, cancelRequest, timeRemaining } = usePushLogin();
+
   const handleForgotPassword = async () => {
     if (!email) {
       router.push("/forgot-password");
@@ -40,25 +58,6 @@ import { toast } from "react-hot-toast";
       setLoading(false);
     }
   };
-
-
-// Import Refactored Components
-import StepEmail from "./auth/StepEmail";
-import StepPassword from "./auth/StepPassword";
-import Step2FA from "./auth/Step2FA";
-
-type Step = "emailInput" | "passwordInput" | "pushWaiting" | "verificationInput";
-
-interface AuthFormProps {
-  initialEmail?: string;
-  onStepChange?: (step: Step) => void;
-}
-
-export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) {
-  const router = useRouter();
-  const supabase = createBrowserClient();
-  const { setTheme } = useTheme();
-  const { requestPushLogin, isWaiting, error: pushError, cancelRequest, timeRemaining } = usePushLogin();
 
   // State
   const [step, setStep] = useState<Step>(initialEmail ? "passwordInput" : "emailInput");
