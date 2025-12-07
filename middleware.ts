@@ -21,8 +21,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith(p)
   );
   
-  // Allow update-pin flow to bypass device verification since it comes from email
-  if (pathname.startsWith("/auth/update-pin")) {
+  // Allow update-pin and update-password flows to bypass device verification since they come from email
+  if (pathname.startsWith("/auth/update-pin") || pathname.startsWith("/auth/update-password")) {
     return res;
   }
 
