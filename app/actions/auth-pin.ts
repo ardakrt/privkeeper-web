@@ -57,6 +57,9 @@ export async function sendPinResetEmail(email: string) {
   }
 
   siteUrl = siteUrl.trim();
+  if (!siteUrl.startsWith("http")) {
+    siteUrl = `https://${siteUrl}`;
+  }
   if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1);
 
   console.log("PIN Reset Redirect URL:", `${siteUrl}/auth/callback?next=/auth/update-pin`);
