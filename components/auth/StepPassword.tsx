@@ -5,7 +5,19 @@ import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 
 interface StepPasswordProps {
-// ... (interface content is handled in previous call)
+  avatarUrl: string | null;
+  userName: string | null;
+  email: string;
+  greeting: string;
+  status: "idle" | "checking" | "success" | "error";
+  error: string | null;
+  forgotPasswordSent?: boolean;
+  onLogin: (password: string) => void;
+  onReset: () => void;
+  onForgotPassword: () => void;
+  variants: any;
+  itemVariants: any;
+}
 
 export default function StepPassword({
   avatarUrl,
