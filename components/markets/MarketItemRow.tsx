@@ -16,10 +16,17 @@ interface MarketItemRowProps {
   config: { icon: string; color: string; category: 'currency' | 'gold' | 'crypto' };
   isInWatchlist?: boolean;
   onToggleWatchlist?: () => void;
+  currency?: 'TRY' | 'USD';
 }
 
-export default function MarketItemRow({ item, config, isInWatchlist, onToggleWatchlist }: MarketItemRowProps) {
+export default function MarketItemRow({ item, config, isInWatchlist, onToggleWatchlist, currency = 'TRY' }: MarketItemRowProps) {
   const isPositive = item.change >= 0;
+
+  const formatPrice = (price: number) => {
+    return currency === 'TRY' 
+      ? `₺${price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   return (
     <motion.div
@@ -57,14 +64,14 @@ export default function MarketItemRow({ item, config, isInWatchlist, onToggleWat
       <div className="text-right min-w-[100px]">
         <p className="text-xs text-zinc-500 mb-1">Alış</p>
         <p className="font-medium text-white dark:text-white light:text-zinc-900">
-          ₺{item.buying.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatPrice(item.buying)}
         </p>
       </div>
 
       <div className="text-right min-w-[100px]">
         <p className="text-xs text-zinc-500 mb-1">Satış</p>
         <p className="font-medium text-white dark:text-white light:text-zinc-900">
-          ₺{item.selling.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatPrice(item.selling)}
         </p>
       </div>
 

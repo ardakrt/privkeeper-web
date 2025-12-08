@@ -21,7 +21,7 @@ import TaskItem, { Task } from "./TaskItem";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import { useAppStore } from "@/lib/store/useAppStore";
-import { Plus, X, Sparkles } from "lucide-react";
+import { Plus, X, Sparkles, Link as LinkIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 
@@ -31,6 +31,7 @@ export default function TaskBoard() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskUrl, setNewTaskUrl] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<Task['priority']>('medium');
   const [mounted, setMounted] = useState(false);
   
@@ -80,10 +81,12 @@ export default function TaskBoard() {
       priority: newTaskPriority,
       due_date: null,
       created_at: new Date().toISOString(),
+      url: newTaskUrl || undefined,
     };
 
     setTasks((prev) => [optimisticTask, ...prev]);
     setNewTaskTitle("");
+    setNewTaskUrl("");
     setIsAdding(false);
     toast.success("Görev eklendi");
 
@@ -92,6 +95,7 @@ export default function TaskBoard() {
       priority: newTaskPriority,
       status: 'todo',
       user_id: user.id,
+      url: newTaskUrl || null,
     });
 
     if (error) {
@@ -267,10 +271,25 @@ export default function TaskBoard() {
                   autoFocus
                   type="text"
                   placeholder="Ne yapılması gerekiyor?"
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 mb-4 border-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 mb-2 border-none focus:ring-2 focus:ring-emerald-500"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                 />
+                
+                <div className="relative mb-4">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LinkIcon className="h-4 w-4 text-zinc-400" />
+                  </div>
+                  <input
+                    type="url"
+                    placeholder="Bağlantı ekle (İsteğe bağlı)"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl pl-10 pr-4 py-3 border-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    value={newTaskUrl}
+                    onChange={(e) => setNewTaskUrl(e.target.value)}
+                  />
+                </div>
+
+                <label className="block text-xs font-medium text-zinc-500 mb-2">Öncelik</label>
                 <div className="flex gap-2 mb-6">
                   {(['low', 'medium', 'high'] as const).map(p => (
                     <button

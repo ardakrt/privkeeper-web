@@ -11,6 +11,7 @@ import { getCardsCache, getIbansCache, getAccountsCache, isCacheFresh } from '@/
 import { Lock, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
+import { verifyWalletPin } from '@/app/actions/wallet/pin';
 
 // Lazy load heavy manager components to reduce initial bundle size and parsing time
 const CardsPageManager = dynamic(() => import('@/components/CardsPageManager'), {
@@ -46,7 +47,7 @@ export default function WalletPage() {
   });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [storedPin, setStoredPin] = useState<string | null>(null);
+  // storedPin is removed as we verify via server action now
   const cardsRef = useRef<any>(null);
   const ibansRef = useRef<any>(null);
   const accountsRef = useRef<any>(null);
@@ -111,13 +112,12 @@ export default function WalletPage() {
 
       const { data: pref } = await supabase
         .from('user_preferences')
-        .select('wallet_pin_enabled, wallet_pin')
+        .select('wallet_pin_enabled')
         .eq('user_id', userId)
         .single();
 
-      if (pref?.wallet_pin_enabled && pref?.wallet_pin) {
+      if (pref?.wallet_pin_enabled) {
         setIsPinRequired(true);
-        setStoredPin(pref.wallet_pin);
       } else {
         setIsPinVerified(true);
       }
@@ -274,11 +274,11 @@ export default function WalletPage() {
             <p className="text-zinc-500 dark:text-zinc-400 mb-8">Devam etmek için PIN&apos;inizi girin</p>
 
             {/* PIN Input */}
-            <div className="flex justify-center gap-3 mb-6">
-              {[0, 1, 2, 3].map((index) => (
+            <div className="flex justify-center gap-2 mb-6">
+              {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all ${
+                  className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all ${
                     pinError
                       ? 'border-red-500 bg-red-500/10'
                       : pinInput.length > index
@@ -296,17 +296,28 @@ export default function WalletPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <button
                   key={num}
-                  onClick={() => {
+                  onClick={async () => {
                     if (pinInput.length < 6) {
                       const newPin = pinInput + num;
                       setPinInput(newPin);
                       setPinError(false);
-                      if (newPin.length >= 4 && newPin === storedPin) {
-                        setTimeout(() => {
-                          setIsPinVerified(true);
-                          sessionStorage.setItem('wallet_pin_verified', 'true');
-                          toast.success('Cüzdan kilidi açıldı');
-                        }, 100);
+                      if (newPin.length === 6) {
+                        // Verify PIN via server action
+                        const res = await verifyWalletPin(newPin);
+                        if (res.success) {
+                          setTimeout(() => {
+                            setIsPinVerified(true);
+                            sessionStorage.setItem('wallet_pin_verified', 'true');
+                            toast.success('Cüzdan kilidi açıldı');
+                          }, 100);
+                        } else {
+                          setPinError(true);
+                          toast.error('Yanlış PIN');
+                          setTimeout(() => {
+                            setPinInput('');
+                            setPinError(false);
+                          }, 1000);
+                        }
                       }
                     }
                   }}
@@ -317,17 +328,28 @@ export default function WalletPage() {
               ))}
               <div /> {/* Empty space */}
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (pinInput.length < 6) {
                     const newPin = pinInput + '0';
                     setPinInput(newPin);
                     setPinError(false);
-                    if (newPin.length >= 4 && newPin === storedPin) {
-                      setTimeout(() => {
-                        setIsPinVerified(true);
-                        sessionStorage.setItem('wallet_pin_verified', 'true');
-                        toast.success('Cüzdan kilidi açıldı');
-                      }, 100);
+                    if (newPin.length === 6) {
+                       // Verify PIN via server action
+                       const res = await verifyWalletPin(newPin);
+                       if (res.success) {
+                         setTimeout(() => {
+                           setIsPinVerified(true);
+                           sessionStorage.setItem('wallet_pin_verified', 'true');
+                           toast.success('Cüzdan kilidi açıldı');
+                         }, 100);
+                       } else {
+                         setPinError(true);
+                         toast.error('Yanlış PIN');
+                         setTimeout(() => {
+                           setPinInput('');
+                           setPinError(false);
+                         }, 1000);
+                       }
                     }
                   }
                 }}

@@ -5,6 +5,7 @@ import { X, Sun, Moon, Globe, Bell, Shield, Loader2, Check, Share2, Trash2, Lock
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@supabase/supabase-js';
 import { updateNotificationSettings, deleteUserAccount } from '@/app/actions';
+import { setWalletPin, disableWalletPin } from '@/app/actions/wallet/pin';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -113,14 +114,13 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
 
   const handlePinSave = async () => {
     if (!user) return;
-    const supabase = createBrowserClient();
 
     const fullPin = pinInput.join("");
     const fullConfirm = confirmPinInput.join("");
 
     if (pinMode === 'set' || pinMode === 'change') {
-      if (fullPin.length < 6) {
-        toast.error('PIN 6 haneli olmalıdır');
+      if (fullPin.length < 4) {
+        toast.error('PIN en az 4 haneli olmalıdır');
         return;
       }
       if (fullPin !== fullConfirm) {
@@ -132,30 +132,24 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
     setIsUpdatingPin(true);
     try {
       if (pinMode === 'disable') {
-        const { data: pref } = await supabase
-          .from('user_preferences')
-          .select('wallet_pin')
-          .eq('user_id', user.id)
-          .single();
-
-        if (pref?.wallet_pin !== fullPin) {
-          toast.error('Yanlış PIN');
+        const res = await disableWalletPin(fullPin);
+        
+        if (!res.success) {
+          toast.error(res.error || 'Yanlış PIN');
           setIsUpdatingPin(false);
           return;
         }
 
-        await supabase
-          .from('user_preferences')
-          .update({ wallet_pin_enabled: false, wallet_pin: null })
-          .eq('user_id', user.id);
-
         setWalletPinEnabled(false);
         toast.success('Cüzdan PIN koruması kaldırıldı');
       } else {
-        await supabase
-          .from('user_preferences')
-          .update({ wallet_pin_enabled: true, wallet_pin: fullPin })
-          .eq('user_id', user.id);
+        const res = await setWalletPin(fullPin);
+        
+        if (!res.success) {
+          toast.error(res.error || 'PIN ayarlanamadı');
+          setIsUpdatingPin(false);
+          return;
+        }
 
         setWalletPinEnabled(true);
         toast.success('Cüzdan PIN koruması aktif');

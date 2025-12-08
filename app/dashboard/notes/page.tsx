@@ -57,6 +57,73 @@ export default function NotesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
   
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizingRef.current && sidebarRef.current) {
+      const containerLeft = sidebarRef.current.getBoundingClientRect().left;
+      const newWidth = e.clientX - containerLeft;
+      
+      // Constraints
+      if (newWidth > 240 && newWidth < 800) {
+        setSidebarWidth(newWidth);
+      }
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizingRef.current = false;
+    document.removeEventListener("mousemove", resize);
+    document.removeEventListener("mouseup", stopResizing);
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+  }, [resize]);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stopResizing);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+  }, [resize, stopResizing]);
+
+  // Resizable Attachments Sidebar State
+  const [attachmentsWidth, setAttachmentsWidth] = useState(288);
+  const attachmentsRef = useRef<HTMLDivElement>(null);
+  const isResizingAttachmentsRef = useRef(false);
+
+  const resizeAttachments = useCallback((e: MouseEvent) => {
+    if (isResizingAttachmentsRef.current && attachmentsRef.current) {
+      const containerRight = attachmentsRef.current.getBoundingClientRect().right;
+      const newWidth = containerRight - e.clientX;
+      
+      // Constraints
+      if (newWidth > 200 && newWidth < 600) {
+        setAttachmentsWidth(newWidth);
+      }
+    }
+  }, []);
+
+  const stopResizingAttachments = useCallback(() => {
+    isResizingAttachmentsRef.current = false;
+    document.removeEventListener("mousemove", resizeAttachments);
+    document.removeEventListener("mouseup", stopResizingAttachments);
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+  }, [resizeAttachments]);
+
+  const startResizingAttachments = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingAttachmentsRef.current = true;
+    document.addEventListener("mousemove", resizeAttachments);
+    document.addEventListener("mouseup", stopResizingAttachments);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+  }, [resizeAttachments, stopResizingAttachments]);
+  
   // Ref to track last saved state to prevent unnecessary saves
   const lastSavedRef = useRef<{title: string, content: string, attachments: Attachment[] | null}>({ title: '', content: '', attachments: [] });
   
@@ -445,7 +512,11 @@ export default function NotesPage() {
         className="w-full max-w-[98%] h-[88vh] flex relative overflow-hidden rounded-3xl backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/30 dark:bg-black/30 light:bg-white/90 light:shadow-2xl"
       >
         {/* SOL PANEL - Not Listesi */}
-        <div className="w-80 h-full border-r border-white/10 dark:border-white/10 light:border-zinc-200 flex flex-col bg-black/20 dark:bg-black/20 light:bg-zinc-50/50">
+        <div 
+          ref={sidebarRef}
+          style={{ width: `${sidebarWidth}px` }}
+          className="h-full border-r border-white/10 dark:border-white/10 light:border-zinc-200 flex flex-col bg-black/20 dark:bg-black/20 light:bg-zinc-50/50 flex-shrink-0 relative"
+        >
           {/* Header */}
           <div className="p-4 border-b border-white/10 dark:border-white/10 light:border-zinc-200">
             <div className="flex items-center justify-between mb-4">
@@ -649,6 +720,13 @@ export default function NotesPage() {
               )}
             </AnimatePresence>
           </div>
+          
+          {/* Invisible Resize Handle Overlay */}
+          <div
+            onMouseDown={startResizing}
+            className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-emerald-500/50 transition-colors z-50 translate-x-1/2"
+            title="Genişliği ayarla"
+          />
         </div>
 
         {/* SAĞ PANEL - Editör */}
@@ -664,7 +742,7 @@ export default function NotesPage() {
           {isDragging && (
             <div className="absolute inset-0 z-50 bg-emerald-500/10 backdrop-blur-sm flex items-center justify-center">
               <div className="text-emerald-400 font-semibold text-xl flex flex-col items-center gap-3">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 Resmi Buraya Bırakın
@@ -687,13 +765,24 @@ export default function NotesPage() {
 
                   {/* Status Bar */}
                   <div className="px-8 pb-3 pt-2 flex justify-between items-center text-xs text-zinc-500 font-mono bg-transparent">
-                    <span>{content.length} karakter • {content.split(/\s+/).filter(Boolean).length} kelime</span>
+  
                   </div>
                 </div>
               </main>
 
               {/* Ek Dosyalar Paneli - Lazy loaded */}
-              <div className="w-72 h-full border-l border-white/10 dark:border-white/10 light:border-zinc-200 bg-transparent">
+              <div 
+                ref={attachmentsRef}
+                style={{ width: `${attachmentsWidth}px` }}
+                className="h-full border-l border-white/10 dark:border-white/10 light:border-zinc-200 bg-transparent flex-shrink-0 relative"
+              >
+                {/* Invisible Resize Handle Overlay */}
+                <div
+                  onMouseDown={startResizingAttachments}
+                  className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-emerald-500/50 transition-colors z-50 -translate-x-1/2"
+                  title="Genişliği ayarla"
+                />
+                
                 <AttachmentsSidebar 
                   attachments={attachments}
                   onUpload={handleFileUpload}

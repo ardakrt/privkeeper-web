@@ -74,6 +74,16 @@ export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) 
   // 2FA Pin State (Only for Verification Code)
   const [pin, setPin] = useState(["", "", "", "", "", ""]);
   const pinRefs = useMemo(() => Array.from({ length: 6 }, () => createRef<HTMLInputElement>()), []);
+  const [greeting, setGreeting] = useState("Merhaba");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    console.log("Current hour:", hour);
+    if (hour >= 5 && hour < 12) setGreeting("Günaydın");
+    else if (hour >= 12 && hour < 17) setGreeting("İyi Günler");
+    else if (hour >= 17 && hour < 22) setGreeting("İyi Akşamlar");
+    else setGreeting("İyi Geceler");
+  }, []);
 
   useEffect(() => {
     if (onStepChange) {
@@ -102,15 +112,6 @@ export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) 
       initTheme();
     }
   }, [initialEmail, setTheme]);
-
-  // Zamana göre selamlama
-  function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return "Günaydın";
-    if (hour >= 12 && hour < 17) return "İyi Günler";
-    if (hour >= 17 && hour < 22) return "İyi Akşamlar";
-    return "İyi Geceler";
-  }
 
   // E-posta adımı
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -390,7 +391,7 @@ export default function AuthForm({ initialEmail, onStepChange }: AuthFormProps) 
             avatarUrl={avatarUrl}
             userName={userName}
             email={email}
-            greeting={getGreeting()}
+            greeting={greeting}
             status={status}
             error={error}
             forgotPasswordSent={forgotPasswordSent}

@@ -134,10 +134,80 @@ async function fetchFromAltinkaynak(): Promise<MarketItem[]> {
   return golds;
 }
 
-// Truncgil API'den döviz ve kripto verilerini çek
-async function fetchFromTruncgil(): Promise<{ currencies: MarketItem[]; cryptos: CryptoItem[] }> {
-  const currencies: MarketItem[] = [];
+// Binance Ticker Interface
+interface BinanceTicker {
+  symbol: string;
+  lastPrice: string;
+  priceChangePercent: string;
+}
+
+const cryptoNames: Record<string, string> = {
+  BTC: 'Bitcoin',
+  ETH: 'Ethereum',
+  SOL: 'Solana',
+  AVAX: 'Avalanche',
+  LINK: 'Chainlink',
+  DOT: 'Polkadot',
+  ADA: 'Cardano',
+  XRP: 'Ripple',
+  DOGE: 'Dogecoin',
+  SHIB: 'Shiba Inu',
+  UNI: 'Uniswap',
+  LTC: 'Litecoin',
+  BNB: 'BNB',
+  MATIC: 'Polygon',
+  TRX: 'Tron',
+};
+
+// Binance API'den kripto verilerini çek
+async function fetchFromBinance(): Promise<CryptoItem[]> {
   const cryptos: CryptoItem[] = [];
+  try {
+    const response = await fetch('https://api.binance.com/api/v3/ticker/24hr', {
+      next: { revalidate: 30 }, // 30 saniye cache
+    });
+
+    if (!response.ok) {
+      throw new Error(`Binance API error: ${response.status}`);
+    }
+
+    const tickers = (await response.json()) as BinanceTicker[];
+
+    // USDT/TRY kurunu bul (veya fallback kullan)
+    const usdtTryTicker = tickers.find(t => t.symbol === 'USDTTRY');
+    const usdtTryPrice = usdtTryTicker ? parseFloat(usdtTryTicker.lastPrice) : 34.0; // Fallback
+
+    const targetSymbols = Object.keys(cryptoNames);
+
+    targetSymbols.forEach(code => {
+      // BTCUSDT, ETHUSDT formatında ara
+      const symbol = `${code}USDT`;
+      const ticker = tickers.find(t => t.symbol === symbol);
+
+      if (ticker) {
+        const priceUSD = parseFloat(ticker.lastPrice);
+        const priceTRY = priceUSD * usdtTryPrice;
+        const change = parseFloat(ticker.priceChangePercent);
+
+        cryptos.push({
+          code,
+          name: cryptoNames[code],
+          priceUSD,
+          priceTRY,
+          change,
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('Binance API Error:', error);
+  }
+  return cryptos;
+}
+
+// Truncgil API'den sadece döviz verilerini çek
+async function fetchFromTruncgil(): Promise<MarketItem[]> {
+  const currencies: MarketItem[] = [];
 
   try {
     const controller = new AbortController();
@@ -201,20 +271,6 @@ async function fetchFromTruncgil(): Promise<{ currencies: MarketItem[]; cryptos:
       });
     }
 
-    // Kriptolar
-    const cryptoSymbols = ['BTC', 'ETH', 'SOL', 'AVAX', 'LINK', 'DOT', 'ADA', 'XRP', 'DOGE', 'SHIB', 'UNI', 'LTC'];
-    cryptoSymbols.forEach(symbol => {
-      if (data[symbol] && data[symbol].Type === 'CryptoCurrency') {
-        cryptos.push({
-          code: symbol,
-          name: data[symbol].Name || symbol,
-          priceUSD: parseFloat(data[symbol].USD_Price) || 0,
-          priceTRY: parseFloat(data[symbol].TRY_Price) || parseFloat(data[symbol].Selling) || 0,
-          change: parseFloat(data[symbol].Change) || 0,
-        });
-      }
-    });
-
   } catch (error: any) {
     // Soket hatalarını ve timeout'ları loglarken daha temiz ol
     if (error.cause?.code === 'UND_ERR_SOCKET' || error.name === 'AbortError') {
@@ -224,25 +280,24 @@ async function fetchFromTruncgil(): Promise<{ currencies: MarketItem[]; cryptos:
     }
   }
 
-  return { currencies, cryptos };
+  return currencies;
 }
 
 export async function GET() {
   try {
-    // Paralel olarak her iki API'den veri çek
-    const [altinkaynakGolds, truncgilData] = await Promise.all([
+    // Paralel olarak tüm API'lerden veri çek
+    const [altinkaynakGolds, truncgilCurrencies, binanceCryptos] = await Promise.all([
       fetchFromAltinkaynak(),
       fetchFromTruncgil(),
+      fetchFromBinance(),
     ]);
 
-    const currencies = truncgilData.currencies;
-    const cryptos = truncgilData.cryptos;
-    
-    // Altınkaynak'tan gelen altın verilerini kullan (daha güncel)
+    const currencies = truncgilCurrencies;
+    const cryptos = binanceCryptos;
     const golds = altinkaynakGolds;
 
     // Veri kontrolü
-    if (currencies.length === 0 && golds.length === 0) {
+    if (currencies.length === 0 && golds.length === 0 && cryptos.length === 0) {
       throw new Error('No data from APIs');
     }
 
@@ -253,14 +308,14 @@ export async function GET() {
         golds,
         cryptos,
         timestamp: new Date().toISOString(),
-        source: 'altinkaynak+truncgil',
+        source: 'altinkaynak+truncgil+binance',
       },
     });
 
   } catch (error) {
     console.error('Markets API Error:', error);
     
-    // Fallback data - güncel değerler
+    // Fallback data
     return NextResponse.json({
       success: true,
       data: {

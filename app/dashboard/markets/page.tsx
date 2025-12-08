@@ -68,10 +68,24 @@ export default function MarketsPage() {
   // isLoading removed as it wasn't used effectively
   const [activeTab, setActiveTab] = useState<'watchlist' | 'portfolio' | 'currencies' | 'golds' | 'crypto'>('watchlist');
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [currency, setCurrency] = useState<'TRY' | 'USD'>('TRY');
   // watchlistLoading removed as unused
 
   const supabase = createBrowserClient();
   const router = useRouter();
+
+  // Load currency preference
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem('market_currency') as 'TRY' | 'USD';
+    if (savedCurrency) {
+      setCurrency(savedCurrency);
+    }
+  }, []);
+
+  const handleSetCurrency = (newCurrency: 'TRY' | 'USD') => {
+    setCurrency(newCurrency);
+    localStorage.setItem('market_currency', newCurrency);
+  };
 
   // Load watchlist
   const loadWatchlist = async () => {
@@ -521,15 +535,43 @@ export default function MarketsPage() {
             </div>
             
             {(activeTab === 'crypto' || activeTab === 'portfolio') && (
-              <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type="text"
-                  placeholder="Ara..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-2 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 border border-white/10 dark:border-white/10 light:border-zinc-200 text-white dark:text-white light:text-zinc-900 placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors w-48"
-                />
+              <div className="flex items-center gap-2">
+                {activeTab === 'crypto' && (
+                  <div className="flex bg-white/5 dark:bg-white/5 light:bg-zinc-100 rounded-xl p-1">
+                    <button
+                      onClick={() => handleSetCurrency('TRY')}
+                      className={`p-1.5 rounded-lg transition-all ${
+                        currency === 'TRY' 
+                          ? 'bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white shadow-sm' 
+                          : 'text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900'
+                      }`}
+                      title="Türk Lirası"
+                    >
+                      <span className="font-bold text-sm">₺</span>
+                    </button>
+                    <button
+                      onClick={() => handleSetCurrency('USD')}
+                      className={`p-1.5 rounded-lg transition-all ${
+                        currency === 'USD' 
+                          ? 'bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white shadow-sm' 
+                          : 'text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900'
+                      }`}
+                      title="Amerikan Doları"
+                    >
+                      <span className="font-bold text-sm">$</span>
+                    </button>
+                  </div>
+                )}
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    type="text"
+                    placeholder="Ara..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-4 py-2 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 border border-white/10 dark:border-white/10 light:border-zinc-200 text-white dark:text-white light:text-zinc-900 placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors w-48"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -557,6 +599,7 @@ export default function MarketsPage() {
                         config={{ icon: item.icon, color: item.color, category: item.category }} 
                         isInWatchlist={true}
                         onToggleWatchlist={() => toggleWatchlist(item.code, item.category)}
+                        currency="TRY"
                       />
                     ))
                   ) : (
@@ -590,6 +633,7 @@ export default function MarketsPage() {
                         config={marketItemConfig[item.code] || { icon: '$', color: '#22C55E', category: 'currency' }} 
                         isInWatchlist={watchlist.includes(item.code)}
                         onToggleWatchlist={() => toggleWatchlist(item.code, 'currency')}
+                        currency="TRY"
                       />
                     ))
                   ) : (
@@ -622,6 +666,7 @@ export default function MarketsPage() {
                         config={marketItemConfig[item.code] || { icon: '◉', color: '#F59E0B', category: 'gold' }} 
                         isInWatchlist={watchlist.includes(item.code)}
                         onToggleWatchlist={() => toggleWatchlist(item.code, 'gold')}
+                        currency="TRY"
                       />
                     ))
                   ) : (
@@ -698,13 +743,14 @@ export default function MarketsPage() {
                         item={{
                           code: item.code,
                           name: item.name,
-                          buying: item.priceTRY,
-                          selling: item.priceTRY,
+                          buying: currency === 'TRY' ? item.priceTRY : item.priceUSD,
+                          selling: currency === 'TRY' ? item.priceTRY : item.priceUSD,
                           change: item.change
                         }} 
                         config={{ icon: '₿', color: '#F7931A', category: 'crypto' }} 
                         isInWatchlist={watchlist.includes(item.code)}
                         onToggleWatchlist={() => toggleWatchlist(item.code, 'crypto')}
+                        currency={currency}
                       />
                     ))
                   ) : (

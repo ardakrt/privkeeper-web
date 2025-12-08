@@ -28,7 +28,16 @@ export default function PinGuard({ children, user }: PinGuardProps) {
   const [status, setStatus] = useState<"idle" | "checking" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [greeting, setGreeting] = useState("Hoşgeldiniz");
   const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) setGreeting("Günaydın");
+    else if (hour >= 12 && hour < 18) setGreeting("İyi Günler");
+    else if (hour >= 18 && hour < 22) setGreeting("İyi Akşamlar");
+    else setGreeting("İyi Geceler");
+  }, []);
 
   useEffect(() => {
     const checkPin = async () => {
@@ -168,10 +177,6 @@ export default function PinGuard({ children, user }: PinGuardProps) {
   // User info extraction
   const avatarUrl = user?.user_metadata?.avatar_url || null;
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Kullanıcı";
-  
-  // Greeting
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Günaydın" : hour < 18 ? "İyi Günler" : "İyi Akşamlar";
 
   return (
     <div className="fixed inset-0 z-[100] min-h-screen w-full bg-white dark:bg-black overflow-hidden">

@@ -17,11 +17,20 @@ export default function LoginPage() {
   const [lockedUser, setLockedUser] = useState<any>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState(false);
+  const [greeting, setGreeting] = useState("Merhaba");
   const supabase = createBrowserClient();
 
   // Check if this is a lock screen view
   const isLockScreen = searchParams?.get("view") === "locked";
   const [hideTabs, setHideTabs] = useState(!!searchParams?.get("email"));
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) setGreeting("Günaydın");
+    else if (hour >= 12 && hour < 17) setGreeting("İyi günler");
+    else if (hour >= 17 && hour < 21) setGreeting("İyi akşamlar");
+    else setGreeting("İyi geceler");
+  }, []);
 
   useEffect(() => {
     const handleAuth = async () => {
@@ -144,15 +153,6 @@ export default function LoginPage() {
     router.refresh();
   };
 
-  // Greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return "Günaydın";
-    if (hour >= 12 && hour < 17) return "İyi günler";
-    if (hour >= 17 && hour < 21) return "İyi akşamlar";
-    return "İyi geceler";
-  };
-
   // Render loading state while processing token
   if (isProcessing) {
     return (
@@ -253,7 +253,7 @@ export default function LoginPage() {
                 transition={{ delay: 0.2 }}
                 className="text-3xl font-bold text-white dark:text-white light:text-zinc-900 mb-2"
               >
-                {getGreeting()}, {lockedUser.name}
+                {greeting}, {lockedUser.name}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
