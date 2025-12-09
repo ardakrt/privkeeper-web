@@ -1097,6 +1097,25 @@ export async function updateUserAccentColor(newColor: string) {
   return { ok: true } as const;
 }
 
+export async function sendPinResetEmail(email: string) {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // Generate password reset link (we'll use this for PIN reset as well)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/update-pin`,
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: "PIN sıfırlama bağlantısı gönderildi" };
+  } catch (error: any) {
+    return { success: false, message: error.message || "Bir hata oluştu" };
+  }
+}
+
 export async function deleteUserAccount() {
   const supabase = await createSupabaseServerClient();
 
