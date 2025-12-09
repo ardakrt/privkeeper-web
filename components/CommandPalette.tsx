@@ -5,7 +5,7 @@ import { Command } from 'cmdk';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useModalStore } from '@/lib/store/useModalStore';
 import { useRouter } from 'next/navigation';
-import { FileText, Wallet, Bell, Settings, LogOut, Plus, CreditCard, Landmark, Timer, ListTodo } from 'lucide-react';
+import { FileText, Wallet, Bell, Settings, LogOut, Plus, CreditCard, Landmark, Timer, ListTodo, ShieldCheck, HardDrive, CheckSquare, TrendingUp, RefreshCw, User, LayoutDashboard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { createBrowserClient } from '@/lib/supabase/client';
 
@@ -73,16 +73,58 @@ export default function CommandPalette() {
 
           <Command.Group heading="Navigasyon" className="p-2 text-xs text-zinc-500 dark:text-zinc-400 light:text-zinc-500">
             <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard'))}
+              className="menu-item"
+            >
+              <LayoutDashboard size={16} /> Genel Bakış
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/authenticator'))}
+              className="menu-item"
+            >
+              <ShieldCheck size={16} /> Authenticator
+            </Command.Item>
+             <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/drive'))}
+              className="menu-item"
+            >
+              <HardDrive size={16} /> Drive
+            </Command.Item>
+            <Command.Item
               onSelect={() => runCommand(() => router.push('/dashboard/notes'))}
               className="menu-item"
             >
               <FileText size={16} /> Notlar
             </Command.Item>
             <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/todos'))}
+              className="menu-item"
+            >
+              <CheckSquare size={16} /> Görevler
+            </Command.Item>
+            <Command.Item
               onSelect={() => runCommand(() => router.push('/dashboard/wallet'))}
               className="menu-item"
             >
               <Wallet size={16} /> Cüzdan
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/cards'))}
+              className="menu-item"
+            >
+              <CreditCard size={16} /> Kartlarım
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/markets'))}
+              className="menu-item"
+            >
+              <TrendingUp size={16} /> Piyasalar
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/dashboard/subscriptions'))}
+              className="menu-item"
+            >
+              <RefreshCw size={16} /> Abonelikler
             </Command.Item>
             <Command.Item
               onSelect={() => runCommand(() => router.push('/dashboard/reminders'))}
@@ -95,6 +137,18 @@ export default function CommandPalette() {
               className="menu-item"
             >
               <Timer size={16} /> Zamanlayıcı
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/profile'))}
+              className="menu-item"
+            >
+              <User size={16} /> Profil
+            </Command.Item>
+            <Command.Item
+              onSelect={() => runCommand(() => router.push('/settings'))}
+              className="menu-item"
+            >
+              <Settings size={16} /> Ayarlar
             </Command.Item>
           </Command.Group>
 

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccentColorProvider } from "@/contexts/AccentColorContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -62,9 +63,11 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <AccentColorProvider>
-            <div className="flex h-full flex-col overflow-hidden">
-              {children}
-            </div>
+            <NavigationProvider>
+              <div className="flex h-full flex-col overflow-hidden">
+                {children}
+              </div>
+            </NavigationProvider>
           </AccentColorProvider>
         </ThemeProvider>
         <SpeedInsights />

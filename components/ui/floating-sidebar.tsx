@@ -53,7 +53,7 @@ export default function FloatingSidebar() {
         opacity: 1
       }}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed left-4 top-4 bottom-6 z-50 flex flex-col rounded-[2.5rem] border border-white/10 dark:border-white/10 light:border-zinc-300/50 bg-black/40 dark:bg-black/40 light:bg-white/60 backdrop-blur-3xl backdrop-saturate-150 shadow-2xl shadow-black/50 dark:shadow-black/50 light:shadow-zinc-300/20 overflow-hidden relative"
+      className="hidden md:flex fixed left-4 top-4 bottom-6 z-50 flex-col rounded-[2.5rem] border border-white/10 dark:border-white/10 light:border-zinc-300/50 bg-black/40 dark:bg-black/40 light:bg-white/60 backdrop-blur-3xl backdrop-saturate-150 shadow-2xl shadow-black/50 dark:shadow-black/50 light:shadow-zinc-300/20 overflow-hidden relative"
     >
       {/* --- AMBIYANS IŞIĞI --- */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-emerald-500/20 via-blue-500/5 to-transparent dark:from-emerald-500/20 dark:via-blue-500/5 light:from-emerald-500/15 light:via-emerald-500/5 blur-3xl pointer-events-none opacity-60" />

@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { Plus, Trash2, MoreHorizontal, Paperclip, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
-import type { Attachment } from '@/app/dashboard/notes/page';
+import type { Attachment } from '@/hooks/useNotesData';
 
 interface AttachmentsSidebarProps {
   attachments: Attachment[];

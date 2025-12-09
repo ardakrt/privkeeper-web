@@ -382,92 +382,129 @@ export default function WalletPage() {
         <div className="w-full min-h-[750px] rounded-3xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/20 dark:bg-black/20 light:bg-white/90 backdrop-blur-sm overflow-hidden light:shadow-xl">
           <div className="p-8 space-y-6">
             {/* Header Section - Top Row */}
-            <div className="relative flex items-center justify-center gap-4">
-              {/* Title - Absolute Left */}
-              <h1 className="absolute left-0 text-2xl font-bold text-white dark:text-white light:text-zinc-900">Cüzdanım</h1>
-
-              {/* Search Bar - Kart veya IBAN'larda ara */}
-              <div className="flex justify-center w-full max-w-md">
-                <div className="relative w-full group">
-
-                  {/* İKON (z-10 ile öne alındı) */}
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-focus-within:text-emerald-500 transition-colors duration-300"
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.3-4.3" />
+            <div className="flex flex-col md:block relative gap-4">
+              
+              {/* Mobile Header: Title & Button */}
+              <div className="flex md:hidden items-center justify-between w-full mb-2">
+                <h1 className="text-2xl font-bold text-white dark:text-white light:text-zinc-900">Cüzdanım</h1>
+                
+                {currentView === 'create' ? (
+                  <button
+                    onClick={() => {
+                      if (activeTab === 'cards') useModalStore.getState().closeAddCardModal();
+                      else if (activeTab === 'ibans') useModalStore.getState().closeAddIbanModal();
+                      else if (activeTab === 'accounts') accountsRef.current?.triggerList();
+                    }}
+                    className="bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-4 py-2 rounded-xl text-xs font-medium border border-white/10 dark:border-white/10 light:border-zinc-300 flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
-                  </div>
-
-                  {/* INPUT */}
-                  <input
-                    type="search"
-                    placeholder="Kart veya IBAN&apos;larda ara..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="
-        w-full h-12 
-        /* Light Mode: Açık gri zemin */
-        bg-zinc-100 hover:bg-zinc-200/50
-        /* Dark Mode: Şeffaf koyu zemin */
-        dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60
-        
-        backdrop-blur-xl 
-        border border-transparent dark:border-white/10 
-        
-        /* Focus Efektleri */
-        focus:bg-white dark:focus:bg-zinc-900/80
-        focus:border-emerald-500/30
-        focus:ring-4 focus:ring-emerald-500/10 
-        
-        rounded-2xl 
-        pl-11 pr-4 
-        
-        text-sm text-zinc-800 dark:text-zinc-200 
-        placeholder:text-zinc-400 dark:placeholder:text-zinc-500
-        
-        transition-all duration-300 ease-out
-        outline-none 
-        shadow-sm hover:shadow-md
-      "
-                  />
-                </div>
+                    Geri
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddNew}
+                    className="bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white hover:bg-zinc-200 dark:hover:bg-zinc-200 light:hover:bg-black px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 shadow-lg"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    {getAddButtonText()}
+                  </button>
+                )}
               </div>
 
-              {/* Action Button - Absolute Right */}
-              {currentView === 'create' ? (
-                <button
-                  onClick={() => {
-                    if (activeTab === 'cards') useModalStore.getState().closeAddCardModal();
-                    else if (activeTab === 'ibans') useModalStore.getState().closeAddIbanModal();
-                    else if (activeTab === 'accounts') accountsRef.current?.triggerList();
-                  }}
-                  className="absolute right-0 bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 border border-white/10 dark:border-white/10 light:border-zinc-300 hover:border-white/20 dark:hover:border-white/20 light:hover:border-zinc-400 transition-all flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Listeye Dön
-                </button>
-              ) : (
-                <button
-                  onClick={handleAddNew}
-                  className="absolute right-0 bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white hover:bg-zinc-200 dark:hover:bg-zinc-200 light:hover:bg-black px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  {getAddButtonText()}
-                </button>
-              )}
+              {/* Desktop Container & Search Bar */}
+              <div className="flex items-center justify-center md:relative w-full">
+                {/* Desktop Title */}
+                <h1 className="hidden md:block md:absolute md:left-0 text-2xl font-bold text-white dark:text-white light:text-zinc-900">Cüzdanım</h1>
+
+                {/* Search Bar - Kart veya IBAN'larda ara */}
+                <div className="flex justify-center w-full md:max-w-md">
+                  <div className="relative w-full group">
+
+                    {/* İKON (z-10 ile öne alındı) */}
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-focus-within:text-emerald-500 transition-colors duration-300"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                    </div>
+
+                    {/* INPUT */}
+                    <input
+                      type="search"
+                      placeholder="Kart veya IBAN&apos;larda ara..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="
+          w-full h-12 
+          /* Light Mode: Açık gri zemin */
+          bg-zinc-100 hover:bg-zinc-200/50
+          /* Dark Mode: Şeffaf koyu zemin */
+          dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60
+          
+          backdrop-blur-xl 
+          border border-transparent dark:border-white/10 
+          
+          /* Focus Efektleri */
+          focus:bg-white dark:focus:bg-zinc-900/80
+          focus:border-emerald-500/30
+          focus:ring-4 focus:ring-emerald-500/10 
+          
+          rounded-2xl 
+          pl-11 pr-4 
+          
+          text-sm text-zinc-800 dark:text-zinc-200 
+          placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+          
+          transition-all duration-300 ease-out
+          outline-none 
+          shadow-sm hover:shadow-md
+        "
+                    />
+                  </div>
+                </div>
+
+                {/* Desktop Action Button - Absolute Right */}
+                <div className="hidden md:block md:absolute md:right-0">
+                  {currentView === 'create' ? (
+                    <button
+                      onClick={() => {
+                        if (activeTab === 'cards') useModalStore.getState().closeAddCardModal();
+                        else if (activeTab === 'ibans') useModalStore.getState().closeAddIbanModal();
+                        else if (activeTab === 'accounts') accountsRef.current?.triggerList();
+                      }}
+                      className="bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 border border-white/10 dark:border-white/10 light:border-zinc-300 hover:border-white/20 dark:hover:border-white/20 light:hover:border-zinc-400 transition-all flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Listeye Dön
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAddNew}
+                      className="bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white hover:bg-zinc-200 dark:hover:bg-zinc-200 light:hover:bg-black px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      {getAddButtonText()}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Tabs Row */}

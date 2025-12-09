@@ -32,7 +32,7 @@ export default function MarketItemRow({ item, config, isInWatchlist, onToggleWat
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-zinc-100 transition-all border border-transparent hover:border-white/10 dark:hover:border-white/10 light:hover:border-zinc-200"
+      className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-zinc-100 dark:hover:bg-white/5 transition-all border border-transparent hover:border-zinc-200 dark:hover:border-white/10"
     >
       {/* Watchlist Toggle */}
       {onToggleWatchlist && (
@@ -57,27 +57,28 @@ export default function MarketItemRow({ item, config, isInWatchlist, onToggleWat
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-white dark:text-white light:text-zinc-900 truncate">{item.name}</p>
-        <p className="text-sm text-zinc-400 dark:text-zinc-400 light:text-zinc-500">{item.code}</p>
+        <p className="font-semibold text-zinc-900 dark:text-white truncate text-sm md:text-base">{item.name}</p>
+        <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">{item.code}</p>
       </div>
 
-      <div className="text-right min-w-[100px]">
-        <p className="text-xs text-zinc-500 mb-1">Alış</p>
-        <p className="font-medium text-white dark:text-white light:text-zinc-900">
+      <div className="text-right min-w-[80px] md:min-w-[100px] hidden sm:block">
+        <p className="text-[10px] md:text-xs text-zinc-500 mb-0.5 md:mb-1">Alış</p>
+        <p className="font-medium text-zinc-900 dark:text-white text-sm md:text-base">
           {formatPrice(item.buying)}
         </p>
       </div>
 
-      <div className="text-right min-w-[100px]">
-        <p className="text-xs text-zinc-500 mb-1">Satış</p>
-        <p className="font-medium text-white dark:text-white light:text-zinc-900">
+      <div className="text-right min-w-[80px] md:min-w-[100px]">
+        <p className="text-[10px] md:text-xs text-zinc-500 mb-0.5 md:mb-1 sm:hidden">Fiyat</p>
+        <p className="text-[10px] md:text-xs text-zinc-500 mb-0.5 md:mb-1 hidden sm:block">Satış</p>
+        <p className="font-medium text-zinc-900 dark:text-white text-sm md:text-base">
           {formatPrice(item.selling)}
         </p>
       </div>
 
-      <div className="text-right min-w-[80px]">
-        <div className={`flex items-center justify-end gap-1 text-sm ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
-          {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+      <div className="text-right min-w-[70px] md:min-w-[80px]">
+        <div className={`flex items-center justify-end gap-1 text-xs md:text-sm ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+          {isPositive ? <TrendingUp size={14} className="md:w-[14px] md:h-[14px]" /> : <TrendingDown size={14} className="md:w-[14px] md:h-[14px]" />}
           <span>{isPositive ? '+' : ''}{item.change.toFixed(2)}%</span>
         </div>
       </div>

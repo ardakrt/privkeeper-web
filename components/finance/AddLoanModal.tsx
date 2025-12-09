@@ -11,6 +11,7 @@ interface AddLoanModalProps {
   onClose: () => void;
   onSuccess: () => void;
   editData?: any; // Data to edit (if in edit mode)
+  mobileMode?: boolean; // Whether the modal is in mobile mode
 }
 
 interface LoanFormData {

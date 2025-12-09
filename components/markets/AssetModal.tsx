@@ -144,15 +144,15 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-zinc-900 dark:bg-zinc-900 light:bg-white rounded-3xl border border-white/10 dark:border-white/10 light:border-zinc-200 p-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none"
+          className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-white/10 p-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-none"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white dark:text-white light:text-zinc-900">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
               {editingAsset ? 'Varlığı Düzenle' : 'Yeni Varlık Ekle'}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
             >
               <X size={20} />
             </button>
@@ -160,16 +160,16 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
 
           {/* Kategori Seçimi */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">Varlık Türü</label>
-            <div className="flex gap-2 p-1 bg-white/5 dark:bg-white/5 light:bg-zinc-100 rounded-xl">
+            <label className="block text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">Varlık Türü</label>
+            <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-white/5 rounded-xl">
               {(['currency', 'gold', 'crypto'] as AssetCategory[]).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                     selectedCategory === cat 
-                      ? 'bg-white dark:bg-white light:bg-zinc-900 text-black dark:text-black light:text-white shadow' 
-                      : 'text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900'
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-black shadow' 
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                   }`}
                 >
                   {cat === 'currency' && <DollarSign size={14} />}
@@ -183,7 +183,7 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
 
           {/* Varlık Seçimi */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">{getCategoryLabel(selectedCategory)} Seçin</label>
+            <label className="block text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">{getCategoryLabel(selectedCategory)} Seçin</label>
             <div className="relative mb-2">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
@@ -191,7 +191,7 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
                 placeholder="Ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 border border-white/10 dark:border-white/10 light:border-zinc-200 text-white dark:text-white light:text-zinc-900 placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500/50"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500/50"
               />
             </div>
             <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto scrollbar-none">
@@ -202,18 +202,18 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
                   className={`p-2 rounded-xl flex flex-col items-center gap-1 transition-all ${
                     selectedAsset.symbol === asset.symbol
                       ? 'bg-emerald-500/20 border-emerald-500/50'
-                      : 'bg-white/5 hover:bg-white/10 border-transparent'
+                      : 'bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border-transparent'
                   } border`}
                 >
                   <span style={{ color: asset.color }} className="text-lg">{asset.icon}</span>
-                  <span className="text-xs text-zinc-400">{asset.symbol}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{asset.symbol}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Seçili Varlık */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 mb-4">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-100 dark:bg-white/5 mb-4">
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold"
               style={{ backgroundColor: `${selectedAsset.color}20`, color: selectedAsset.color }}
@@ -221,7 +221,7 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
               {selectedAsset.icon}
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-white dark:text-white light:text-zinc-900">{selectedAsset.name}</p>
+              <p className="font-semibold text-zinc-900 dark:text-white">{selectedAsset.name}</p>
               <p className="text-xs text-zinc-500">{selectedAsset.symbol} • {getCategoryLabel(selectedAsset.category)}</p>
             </div>
             {/* Güncel fiyat göster */}
@@ -247,27 +247,27 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
 
           {/* Miktar */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">{getAmountLabel()}</label>
+            <label className="block text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">{getAmountLabel()}</label>
             <input
               type="number"
               step="any"
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 border border-white/10 dark:border-white/10 light:border-zinc-200 text-white dark:text-white light:text-zinc-900 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
             />
           </div>
 
           {/* Alış Fiyatı */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">Alış Fiyatı (₺)</label>
+            <label className="block text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">Alış Fiyatı (₺)</label>
             <input
               type="number"
               step="any"
               placeholder="0.00"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-100 border border-white/10 dark:border-white/10 light:border-zinc-200 text-white dark:text-white light:text-zinc-900 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
             />
             {/* Toplam değer hesaplama */}
             {amount && price && (
@@ -281,7 +281,7 @@ export default function AssetModal({ isOpen, onClose, onSave, editingAsset, mark
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white font-medium transition-colors"
+              className="flex-1 px-4 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-medium transition-colors"
             >
               İptal
             </button>

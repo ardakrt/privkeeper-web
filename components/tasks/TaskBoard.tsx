@@ -327,7 +327,7 @@ export default function TaskBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 flex gap-6 overflow-x-auto pb-4 items-start">
+        <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-y-auto md:overflow-hidden items-stretch md:items-start">
           <TaskColumn 
             id="todo" 
             title="Yapılacaklar" 

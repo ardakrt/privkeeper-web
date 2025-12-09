@@ -329,7 +329,7 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
         animate={{ opacity: 1, y: 0 }}
         className="max-w-2xl mx-auto"
       >
-        <div className="rounded-2xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-white p-8">
+        <div className="rounded-2xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-white p-4 md:p-8">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-green-500/20 text-green-500">
@@ -358,19 +358,19 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
                 key={index}
                 className="flex items-center justify-between p-4 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-50 border border-white/10 dark:border-white/10 light:border-zinc-200"
               >
-                <div>
-                  <p className="font-medium text-white dark:text-white light:text-zinc-900">
+                <div className="min-w-0 mr-4">
+                  <p className="font-medium text-white dark:text-white light:text-zinc-900 truncate">
                     {code.issuer || code.serviceName}
                   </p>
                   {code.accountName && (
-                    <p className="text-sm text-zinc-400 dark:text-zinc-400 light:text-zinc-600">
+                    <p className="text-sm text-zinc-400 dark:text-zinc-400 light:text-zinc-600 truncate">
                       {code.accountName}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => removeCode(index)}
-                  className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-400 hover:text-red-500 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-400 hover:text-red-500 transition-colors flex-shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -386,7 +386,7 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-col md:flex-row gap-3">
             <button
               onClick={() => setParsedCodes([])}
               disabled={isImporting}
@@ -423,7 +423,7 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
       animate={{ opacity: 1, y: 0 }}
       className="max-w-2xl mx-auto"
     >
-      <div className="rounded-2xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-white p-8">
+      <div className="rounded-2xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-white p-4 md:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 text-emerald-500">
             <QrCode className="w-6 h-6" />
@@ -448,13 +448,13 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
         )}
 
         {!method ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => {
                 setMethod("camera");
                 startCamera();
               }}
-              className="p-8 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-50 border border-white/10 dark:border-white/10 light:border-zinc-200 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-100 hover:border-emerald-500/50 transition-all group"
+              className="p-6 md:p-8 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-50 border border-white/10 dark:border-white/10 light:border-zinc-200 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-100 hover:border-emerald-500/50 transition-all group"
             >
               <Camera className="w-12 h-12 mx-auto mb-4 text-emerald-500" />
               <h3 className="text-base font-semibold text-white dark:text-white light:text-zinc-900 mb-2">
@@ -467,7 +467,7 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
 
             <button
               onClick={() => setMethod("upload")}
-              className="p-8 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-50 border border-white/10 dark:border-white/10 light:border-zinc-200 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-100 hover:border-cyan-500/50 transition-all group"
+              className="p-6 md:p-8 rounded-xl bg-white/5 dark:bg-white/5 light:bg-zinc-50 border border-white/10 dark:border-white/10 light:border-zinc-200 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-100 hover:border-cyan-500/50 transition-all group"
             >
               <Upload className="w-12 h-12 mx-auto mb-4 text-cyan-500" />
               <h3 className="text-base font-semibold text-white dark:text-white light:text-zinc-900 mb-2">
@@ -479,15 +479,26 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
             </button>
           </div>
         ) : method === "camera" ? (
-          <div>
-            <div className="relative rounded-xl overflow-hidden bg-black mb-4">
+          <div className="fixed inset-0 z-[100] bg-black flex flex-col md:relative md:bg-transparent md:z-auto md:block">
+            {/* Mobile Header */}
+            <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center md:hidden bg-gradient-to-b from-black/80 to-transparent">
+               <h3 className="text-white font-semibold text-lg">QR Tara</h3>
+               <button 
+                 onClick={() => { stopCamera(); setMethod(null); }} 
+                 className="p-2 bg-white/10 rounded-full text-white backdrop-blur-md active:scale-95 transition-transform"
+               >
+                 <X className="w-6 h-6" />
+               </button>
+            </div>
+
+            {/* Camera Viewport */}
+            <div className="relative flex-1 md:flex-none md:rounded-xl md:overflow-hidden md:bg-black md:mb-4">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-auto"
-                style={{ maxHeight: "400px" }}
+                className="w-full h-full object-cover md:h-auto md:max-h-[400px]"
               />
               <canvas ref={canvasRef} className="hidden" />
 
@@ -497,63 +508,74 @@ export default function QRImportScanner({ onSuccess }: { onSuccess?: () => void 
               </div>
             </div>
 
-            {/* Success/Error Messages */}
-            {successMessage && (
-              <div className="mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-green-400">{successMessage}</p>
-              </div>
-            )}
+            {/* Controls & Messages */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex flex-col gap-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent md:static md:bg-none md:p-0">
+                {/* Success/Error Messages */}
+                {(successMessage || error || parsedCodes.length > 0) && (
+                  <div className="space-y-2">
+                    {successMessage && (
+                      <div className="p-3 rounded-xl bg-green-500/90 text-white border border-green-500/20 backdrop-blur-md shadow-lg">
+                        <p className="text-sm font-medium text-center">✅ {successMessage}</p>
+                      </div>
+                    )}
+                    
+                    {error && (
+                       <div className="p-3 rounded-xl bg-red-500/90 text-white border border-red-500/20 backdrop-blur-md shadow-lg">
+                        <p className="text-sm font-medium text-center">{error}</p>
+                      </div>
+                    )}
 
-            {/* Scanned codes count */}
-            {parsedCodes.length > 0 && (
-              <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                <p className="text-sm font-semibold text-emerald-400">
-                  {parsedCodes.length} kod tarandı
-                </p>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Daha fazla QR taratabilir veya bitirmek için aşağıdaki butona basın
-                </p>
-              </div>
-            )}
+                    {parsedCodes.length > 0 && !successMessage && (
+                      <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md">
+                        <p className="text-sm font-semibold text-emerald-400 text-center">
+                          {parsedCodes.length} kod tarandı
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            <div className="mb-4 space-y-2">
-              <p className="text-center text-sm text-zinc-400 dark:text-zinc-400 light:text-zinc-600">
-                QR kodu kamera görüntüsünün ortasına getirin
-              </p>
-              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xs text-amber-400 text-center">
-                  ⚠️ Parlak ekranda QR okutamıyorsanız: Ekran görüntüsü alıp &quot;Görsel Yükle&quot; ile deneyin
-                </p>
-              </div>
-            </div>
+                {/* Helper Text */}
+                <div className="md:mb-4 space-y-2 hidden md:block">
+                  <p className="text-center text-sm text-zinc-400 dark:text-zinc-400 light:text-zinc-600">
+                    QR kodu kamera görüntüsünün ortasına getirin
+                  </p>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-xs text-amber-400 text-center">
+                      ⚠️ Parlak ekranda QR okutamıyorsanız: Ekran görüntüsü alıp &quot;Görsel Yükle&quot; ile deneyin
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  stopCamera();
-                  setMethod(null);
-                }}
-                className="flex-1 bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 px-6 py-3 rounded-xl text-sm font-semibold transition-colors"
-              >
-                İptal
-              </button>
+                {/* Action Buttons */}
+                <div className="flex flex-col md:flex-row gap-3 pb-safe">
+                  <button
+                    onClick={() => {
+                      stopCamera();
+                      setMethod(null);
+                    }}
+                    className="hidden md:block flex-1 bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 px-6 py-3 rounded-xl text-sm font-semibold transition-colors"
+                  >
+                    İptal
+                  </button>
 
-              {parsedCodes.length > 0 && (
-                <button
-                  onClick={() => {
-                    stopCamera();
-                    // Keep parsedCodes, just close camera
-                  }}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg"
-                >
-                  Taramayı Bitir ({parsedCodes.length})
-                </button>
-              )}
+                  {parsedCodes.length > 0 && (
+                    <button
+                      onClick={() => {
+                        stopCamera();
+                        // Keep parsedCodes
+                      }}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg active:scale-95"
+                    >
+                      Taramayı Bitir ({parsedCodes.length})
+                    </button>
+                  )}
+                </div>
             </div>
           </div>
         ) : (
           <div>
-            <label className="block w-full p-12 rounded-xl border-2 border-dashed border-white/20 dark:border-white/20 light:border-zinc-300 hover:border-cyan-500/50 transition-colors cursor-pointer group">
+            <label className="block w-full p-8 md:p-12 rounded-xl border-2 border-dashed border-white/20 dark:border-white/20 light:border-zinc-300 hover:border-cyan-500/50 transition-colors cursor-pointer group">
               <input
                 type="file"
                 accept="image/*"

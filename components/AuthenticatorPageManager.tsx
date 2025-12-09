@@ -11,8 +11,8 @@ import { getOTPSecretsCache } from "./OTPPreloader";
 const QRImportScanner = dynamic(() => import("./QRImportScanner"), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-white/70 dark:text-white/70 light:text-zinc-600">
-      <div className="w-12 h-12 border-4 border-white/10 dark:border-white/10 light:border-zinc-200 border-t-emerald-500 rounded-full animate-spin mb-4" />
+    <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-zinc-500 dark:text-white/70">
+      <div className="w-12 h-12 border-4 border-zinc-200 dark:border-white/10 border-t-emerald-500 rounded-full animate-spin mb-4" />
       Kamera modülü yükleniyor...
     </div>
   ),
@@ -115,22 +115,21 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
   };
 
   return (
-    <div className="animate-fadeIn w-full max-w-6xl mx-auto">
-      {/* Header Panel */}
+    <div className="w-full h-full md:p-16 flex flex-col animate-fadeIn">
       <motion.div
         layout
         transition={{ duration: 0.3 }}
-        className="w-full min-h-[600px] flex flex-col rounded-3xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-black/20 dark:bg-black/20 light:bg-white/90 backdrop-blur-sm overflow-hidden light:shadow-xl"
+        className="flex-1 flex flex-col w-full md:max-w-6xl md:mx-auto md:rounded-3xl md:border md:border-zinc-200 md:dark:border-white/10 md:bg-white/90 md:dark:bg-black/20 md:backdrop-blur-sm md:overflow-hidden md:shadow-xl bg-transparent overflow-hidden"
       >
         {/* Header Section */}
-        <div className="p-8 border-b border-white/5 dark:border-white/5 light:border-zinc-200">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/5 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
             {/* Left Side - Title */}
-            <div>
-              <h1 className="text-2xl font-bold text-white dark:text-white light:text-zinc-900">
+            <div className="text-center sm:text-left">
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
                 Authenticator
               </h1>
-              <p className="text-sm text-white/60 dark:text-white/60 light:text-zinc-500 mt-1">
+              <p className="text-sm text-zinc-500 dark:text-white/60 mt-1">
                 2FA kodlarınızı güvenle yönetin
               </p>
             </div>
@@ -139,7 +138,7 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
             {view === "list" && (
               <button
                 onClick={() => setView("import")}
-                className="bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 border border-white/10 dark:border-white/10 light:border-zinc-300 hover:border-white/20 dark:hover:border-white/20 light:hover:border-zinc-400 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto bg-zinc-100 dark:bg-white/5 text-zinc-900 dark:text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 transition-all flex items-center justify-center gap-2"
               >
                 <QrCode className="w-4 h-4" />
                 İçe Aktar
@@ -149,7 +148,7 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
             {view !== "list" && (
               <button
                 onClick={() => setView("list")}
-                className="bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 border border-white/10 dark:border-white/10 light:border-zinc-300 hover:border-white/20 dark:hover:border-white/20 light:hover:border-zinc-400 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto bg-zinc-100 dark:bg-white/5 text-zinc-900 dark:text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 transition-all flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -161,25 +160,17 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
         </div>
 
         {/* Content Area */}
-        <div className="p-8 flex-1">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar min-h-0 pb-24 md:pb-8">
           {view === "list" && (
             <div>
               {otpCodes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <h2 className="text-xl font-semibold text-white dark:text-white light:text-zinc-900 mb-2">
+                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
                     Henüz 2FA kodunuz yok
                   </h2>
-                  <p className="text-sm text-white/60 dark:text-white/60 light:text-zinc-500 mb-6 max-w-md">
-                    Google Authenticator&apos;daki tüm kodlarınızı tek QR ile ekleyin
+                  <p className="text-sm text-zinc-500 dark:text-white/60">
+                    Eklemek için İçe Aktar butonunu kullanın
                   </p>
-                  <button
-                    onClick={() => setView("import")}
-                    className="bg-white/5 dark:bg-white/5 light:bg-zinc-100 text-white dark:text-white light:text-zinc-900 px-6 py-3 rounded-xl text-sm font-medium hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-zinc-200 border border-white/10 dark:border-white/10 light:border-zinc-300 hover:border-white/20 dark:hover:border-white/20 light:hover:border-zinc-400 transition-all flex items-center gap-2"
-                  >
-                    <QrCode className="w-5 h-5" />
-                    Toplu İçe Aktar
-                  </button>
-               
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -197,25 +188,25 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
                         exit={{ opacity: 0, scale: 0.98 }}
                       >
                         {isLoading ? (
-                          <div className="rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-zinc-50 p-3 shadow-sm dark:shadow-none">
+                          <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 p-3 shadow-sm dark:shadow-none">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 {/* Circular icon skeleton */}
-                                <div className="w-14 h-14 rounded-full bg-white/10 dark:bg-white/10 light:bg-zinc-200 animate-pulse" />
+                                <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-white/10 animate-pulse" />
                                 <div className="space-y-2">
                                   {/* Service name skeleton */}
-                                  <div className="h-4 w-24 bg-white/10 dark:bg-white/10 light:bg-zinc-200 rounded animate-pulse" />
+                                  <div className="h-4 w-24 bg-zinc-200 dark:bg-white/10 rounded animate-pulse" />
                                   {/* Account skeleton */}
-                                  <div className="h-3 w-32 bg-white/10 dark:bg-white/10 light:bg-zinc-200 rounded animate-pulse" />
+                                  <div className="h-3 w-32 bg-zinc-200 dark:bg-white/10 rounded animate-pulse" />
                                 </div>
                               </div>
                               <div className="flex items-center gap-4">
                                 {/* Code skeleton */}
-                                <div className="h-8 w-24 bg-white/10 dark:bg-white/10 light:bg-zinc-200 rounded animate-pulse" />
+                                <div className="h-8 w-24 bg-zinc-200 dark:bg-white/10 rounded animate-pulse" />
                                 {/* Button skeletons */}
                                 <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-lg bg-white/10 dark:bg-white/10 light:bg-zinc-200 animate-pulse" />
-                                  <div className="w-8 h-8 rounded-lg bg-white/10 dark:bg-white/10 light:bg-zinc-200 animate-pulse" />
+                                  <div className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-white/10 animate-pulse" />
+                                  <div className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-white/10 animate-pulse" />
                                 </div>
                               </div>
                             </div>
@@ -236,7 +227,7 @@ export default function AuthenticatorPageManager({ otpCodes }: AuthenticatorPage
                             isDeleting={isDeleting}
                           />
                         ) : (
-                          <div className="text-center py-8 text-red-400 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-white/5 light:bg-white">
+                          <div className="text-center py-8 text-red-500 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5">
                             <p className="text-sm">Secret yüklenemedi</p>
                           </div>
                         )}

@@ -34,7 +34,7 @@ export default function TaskColumn({ id, title, tasks, onDeleteTask, onAddTask }
   };
 
   return (
-    <div className="flex flex-col h-full min-w-[280px] w-full md:w-1/3">
+    <div className="flex flex-col shrink-0 md:shrink h-auto md:h-full min-w-[280px] w-full md:flex-1">
       {/* Header */}
       <div className={`flex items-center justify-between mb-3 px-1 ${getHeaderColor()}`}>
         <div className="flex items-center gap-2">

@@ -26,7 +26,7 @@ export default async function AuthenticatorPage() {
   }
 
   return (
-    <div className="w-full h-full pt-14">
+    <div className="w-full h-full">
       <AuthenticatorPageManager otpCodes={otpCodes || []} />
     </div>
   );

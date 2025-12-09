@@ -20,10 +20,10 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
     : 0;
 
   const getBadgeStyles = () => {
-    if (isCompleted) return { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/20' };
-    if (item.daysLeft <= 1) return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' };
-    if (item.daysLeft <= 3) return { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' };
-    return { bg: 'bg-white/5 dark:bg-white/5 light:bg-zinc-100', text: 'text-zinc-400 dark:text-zinc-400 light:text-zinc-600', border: 'border-white/10 dark:border-white/10 light:border-zinc-200' };
+    if (isCompleted) return { bg: 'bg-green-500/10', text: 'text-green-500', border: 'border-green-500/20' };
+    if (item.daysLeft <= 1) return { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/20' };
+    if (item.daysLeft <= 3) return { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' };
+    return { bg: 'bg-zinc-100 dark:bg-white/5', text: 'text-zinc-500 dark:text-zinc-400', border: 'border-zinc-200 dark:border-white/10' };
   };
 
   const badgeStyles = getBadgeStyles();
@@ -43,8 +43,8 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
       <div className={`${
         isCompleted
           ? 'bg-green-500/[0.05] border-green-500/20 hover:border-green-500/30'
-          : 'bg-white/[0.02] dark:bg-white/[0.02] light:bg-zinc-50 border border-white/[0.05] dark:border-white/[0.05] light:border-zinc-200 hover:border-white/[0.1] dark:hover:border-white/[0.1] light:hover:border-zinc-300'
-      } hover:bg-white/[0.05] dark:hover:bg-white/[0.05] light:hover:bg-white rounded-xl p-4 relative transition-all overflow-hidden shadow-sm dark:shadow-none`}>
+          : 'bg-white/[0.02] dark:bg-white/[0.02] light:bg-zinc-50 border border-zinc-200 dark:border-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.1]'
+      } hover:bg-zinc-50 dark:hover:bg-white/[0.05] rounded-xl p-4 relative transition-all overflow-hidden shadow-sm dark:shadow-none`}>
 
         <div className="flex items-center gap-5">
 
@@ -58,14 +58,14 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
           {/* Orta: Bilgiler */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-white dark:text-white light:text-zinc-900 truncate tracking-tight">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white truncate tracking-tight">
                 {item.name}
               </h3>
               {isCompleted && (
-                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
               )}
             </div>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-500 light:text-zinc-600 uppercase tracking-wider truncate">
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider truncate">
               {item.type === 'subscription' ? 'ABONELİK' : 'KREDİ'} •{' '}
               {item.billing_cycle === 'monthly' ? 'AYLIK' : 'YILLIK'}
               {isCompleted && ' • TAMAMLANDI'}
@@ -74,16 +74,16 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
             {isLoan && item.total_installments && (
               <div className="mt-2 max-w-[240px]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs ${isCompleted ? 'text-green-400 font-semibold' : 'text-zinc-600'}`}>
+                  <span className={`text-xs ${isCompleted ? 'text-green-500 font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`}>
                     {item.paid_installments || 0} / {item.total_installments} taksit
                   </span>
-                  <span className={`text-xs ${isCompleted ? 'text-green-400 font-semibold' : 'text-zinc-600'}`}>
+                  <span className={`text-xs ${isCompleted ? 'text-green-500 font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`}>
                     %{loanProgress.toFixed(0)}
                   </span>
                 </div>
-                <div className="w-full bg-zinc-800 rounded-full h-1 overflow-hidden">
+                <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                   <div
-                    className={`${isCompleted ? 'bg-green-500' : 'bg-zinc-500'} h-full rounded-full transition-all duration-300`}
+                    className={`${isCompleted ? 'bg-green-500' : 'bg-zinc-500 dark:bg-zinc-400'} h-full rounded-full transition-all duration-300`}
                     style={{ width: `${loanProgress}%` }}
                   />
                 </div>
@@ -98,7 +98,7 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
             <div className="text-right min-w-[120px] transition-all duration-300 ease-out group-hover:translate-x-[-90px]">
 
               {/* 1. Tutar */}
-              <div className="text-2xl font-mono font-bold text-white dark:text-white light:text-zinc-900 tracking-tighter tabular-nums whitespace-nowrap">
+              <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white tracking-tighter tabular-nums whitespace-nowrap">
                 -{item.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 <span className="text-lg text-zinc-500 ml-1">₺</span>
               </div>
@@ -106,7 +106,7 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
               {/* 2. Kart Bilgisi Alanı (Placeholder) */}
               <div className="h-4 flex items-center justify-end mt-0.5 mb-1">
                 {item.linked_card_details ? (
-                  <div className="text-[10px] font-medium text-zinc-600 dark:text-zinc-600 light:text-zinc-500 truncate max-w-[140px]">
+                  <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500 truncate max-w-[140px]">
                     {item.linked_card_details}
                   </div>
                 ) : null}
@@ -126,7 +126,7 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
               {onEdit && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                  className="p-2.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors backdrop-blur-sm border border-zinc-700/50"
+                  className="p-2.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors backdrop-blur-sm border border-zinc-200 dark:border-zinc-700/50"
                   title="Düzenle"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -135,7 +135,7 @@ export default function SubscriptionCard({ item, onEdit, onDelete }: Subscriptio
               {onDelete && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                  className="p-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 transition-colors backdrop-blur-sm"
+                  className="p-2.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-500 border border-red-200 dark:border-red-500/10 transition-colors backdrop-blur-sm"
                   title="Sil"
                 >
                   <Trash2 className="w-4 h-4" />

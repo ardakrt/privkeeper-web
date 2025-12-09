@@ -127,8 +127,8 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
       setError("Lütfen adınızı girin");
       return;
     }
-    if (!password || password.length < 6) {
-      setError("Şifre en az 6 karakter olmalıdır");
+    if (!password || password.length < 8) {
+      setError("Şifre en az 8 karakter olmalıdır");
       return;
     }
 
@@ -235,7 +235,7 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ornek@email.com"
-                  className="w-full h-12 pl-12 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300"
+                  className="w-full h-12 pl-12 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300"
                   required
                 />
               </div>
@@ -294,7 +294,7 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
               <div className="w-full space-y-4">
                 <motion.div variants={itemVariants} className="w-full space-y-2">
                   <label htmlFor="name" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 ml-1 uppercase tracking-wider">Ad Soyad</label>
-                  <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Adınız Soyadınız" autoComplete="new-password" className="w-full h-12 px-4 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300" required />
+                  <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Adınız Soyadınız" autoComplete="new-password" className="w-full h-12 px-4 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300" required />
                 </motion.div>
 
                 <motion.div variants={itemVariants} className="w-full space-y-2">
@@ -305,9 +305,9 @@ export default function RegisterForm({ onStepChange, backTrigger }: RegisterForm
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="En az 6 karakter"
+                      placeholder="En az 8 karakter"
                       autoComplete="new-password"
-                      className="w-full h-12 px-4 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300"
+                      className="w-full h-12 px-4 bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-zinc-50 dark:focus:bg-white/10 transition-all duration-300"
                       required
                     />
                     <button

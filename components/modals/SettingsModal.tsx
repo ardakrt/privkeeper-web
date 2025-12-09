@@ -640,12 +640,12 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        className="relative z-10 w-[850px] h-[600px] mx-4"
+        className="relative z-10 w-full h-full md:w-[850px] md:h-[600px] md:mx-4"
       >
-        <div className="h-full bg-zinc-50/95 dark:bg-[#09090b] rounded-3xl border border-zinc-300/50 dark:border-white/10 shadow-2xl overflow-hidden flex backdrop-blur-xl">
-
+        {/* --- DESKTOP VIEW --- */}
+        <div className="hidden md:flex h-full bg-zinc-50/95 dark:bg-[#09090b] rounded-3xl border border-zinc-300/50 dark:border-white/10 shadow-2xl overflow-hidden backdrop-blur-xl">
           {/* LEFT PANEL - SIDEBAR */}
-          <div className="w-[280px] bg-white/40 dark:bg-zinc-900/20 border-r border-zinc-300/50 dark:border-white/5 p-6 flex flex-col backdrop-blur-xl">
+          <div className="w-[280px] bg-white/40 dark:bg-zinc-900/20 border-r border-zinc-300/50 dark:border-white/5 p-6 flex flex-col backdrop-blur-xl shrink-0">
             {/* Header */}
             <div className="mb-10 px-2">
               <h1 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">Ayarlar</h1>
@@ -681,7 +681,7 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
           </div>
 
           {/* RIGHT PANEL - CONTENT */}
-          <div className="flex-1 flex flex-col bg-transparent dark:bg-[#09090b] relative">
+          <div className="flex-1 flex flex-col bg-transparent dark:bg-[#09090b] relative overflow-hidden">
             {/* Close Button */}
             <div className="absolute top-6 right-6 z-20">
               <button
@@ -700,14 +700,65 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2,  }}
+                  transition={{ duration: 0.2 }}
                 >
                   {renderContent()}
                 </motion.div>
               </AnimatePresence>
             </div>
+          </div>
+        </div>
 
+        {/* --- MOBILE VIEW --- */}
+        <div className="flex md:hidden flex-col h-full bg-zinc-50 dark:bg-black overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900/50 backdrop-blur-md z-20">
+            <h1 className="text-lg font-bold text-zinc-900 dark:text-white">Ayarlar</h1>
+            <button
+              onClick={onClose}
+              className="p-2 -mr-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
+          {/* Tabs */}
+          <div className="bg-white dark:bg-zinc-900/30 border-b border-zinc-200 dark:border-white/10">
+            <div className="flex overflow-x-auto scrollbar-none p-2 gap-2">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      isActive
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-md'
+                        : 'bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 bg-zinc-50 dark:bg-black custom-scrollbar pb-24">
+             <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {renderContent()}
+                </motion.div>
+              </AnimatePresence>
           </div>
         </div>
       </motion.div>
@@ -725,6 +776,13 @@ export default function SettingsModal({ isOpen, onClose, user }: SettingsModalPr
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(0, 0, 0, 0.3);
+        }
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
         @media (prefers-color-scheme: dark) {
           .custom-scrollbar::-webkit-scrollbar-thumb {

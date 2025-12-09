@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Command } from "lucide-react";
+import { Search, Command, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import { User } from "@supabase/supabase-js";
 import { createBrowserClient } from "@/lib/supabase/client";
 import ProfileDropdown from "@/components/ProfileDropdown";
-import ThemeToggle from "@/components/ThemeToggle";
 import { useModalStore } from "@/lib/store/useModalStore";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 interface TopHeaderProps {
   onSearchClick?: () => void;
@@ -18,6 +18,7 @@ export default function TopHeader({ onSearchClick }: TopHeaderProps) {
   const [user, setUser] = useState<User | null>(null);
   const supabase = createBrowserClient();
   const openCommandPalette = useModalStore((state) => state.openCommandPalette);
+  const { setIsMobileMenuOpen } = useNavigation();
 
   const getUser = async () => {
     const { data } = await supabase.auth.refreshSession();
@@ -43,10 +44,32 @@ export default function TopHeader({ onSearchClick }: TopHeaderProps) {
 
   return (
     <header className="sticky top-2 z-50 bg-transparent">
-      <div className="relative flex items-center justify-center px-8 py-4 h-20">
-        {/* Center - Premium Search Bar */}
+      <div className="relative flex items-center justify-between md:justify-center px-4 md:px-8 py-4 h-20 gap-4">
+        
+        {/* Mobile Menu Button (Left) */}
+        <div className="flex md:hidden flex-none">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2.5 rounded-xl bg-zinc-900/30 dark:bg-zinc-900/30 light:bg-white/80 backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 text-zinc-500 dark:text-zinc-500 light:text-zinc-600 active:scale-95 transition-all"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Mobile Search Bar (Center) */}
+        <div className="flex md:hidden flex-1 justify-center items-center mr-23 ml-2"> 
+           <button 
+             onClick={onSearchClick || openCommandPalette}
+             className="group relative flex items-center gap-2 w-full max-w-[160px] h-10 px-3 bg-zinc-900/30 dark:bg-zinc-900/30 light:bg-white/80 backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-zinc-200 rounded-xl transition-all active:scale-95"
+           >
+             <Search className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-500 light:text-zinc-600" />
+             <span className="text-xs text-zinc-500 dark:text-zinc-500 light:text-zinc-600">Ara...</span>
+           </button>
+        </div>
+
+        {/* Center - Premium Search Bar (Desktop Only) */}
         <motion.div
-          className="flex-1 flex items-center justify-center"
+          className="hidden md:flex flex-1 items-center justify-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
@@ -83,7 +106,7 @@ export default function TopHeader({ onSearchClick }: TopHeaderProps) {
         </motion.div>
 
         {/* Right - Profile Only */}
-        <div className="absolute right-8 flex items-center gap-3">
+        <div className="absolute right-4 md:right-8 flex items-center gap-3">
           {user && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}

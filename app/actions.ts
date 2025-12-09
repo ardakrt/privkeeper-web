@@ -441,6 +441,32 @@ export async function updateReminder(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+// Toggle Reminder Status
+export async function toggleReminderStatus(id: string, is_completed: boolean) {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("Oturum bulunamadı");
+  }
+
+  const { error } = await supabase
+    .from("reminders")
+    .update({ is_completed })
+    .match({ id, user_id: user.id });
+
+  if (error) {
+    console.error("Hatırlatma durum güncelleme hatası:", error);
+    throw new Error("Hatırlatma güncellenemedi");
+  }
+
+  revalidatePath("/dashboard");
+}
+
 // Delete Reminder
 export async function deleteReminder(formData: FormData) {
   const supabase = await createSupabaseServerClient();
