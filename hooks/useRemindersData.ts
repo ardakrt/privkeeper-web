@@ -14,13 +14,24 @@ export type Reminder = {
   is_completed?: boolean;
 };
 
-export function useRemindersData() {
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useRemindersData(initialReminders?: Reminder[]) {
+  const [reminders, setReminders] = useState<Reminder[]>(initialReminders || []);
+  const [isLoading, setIsLoading] = useState(!initialReminders);
   const [searchQuery, setSearchQuery] = useState("");
   const supabase = createBrowserClient();
 
+  useEffect(() => {
+    if (initialReminders) {
+      setReminders(initialReminders);
+      setIsLoading(false);
+    }
+  }, [initialReminders]);
+
   const loadReminders = useCallback(async () => {
+    // If we are using external data (initialReminders is present), we might skip this
+    // OR we might want to allow manual refresh.
+    // For now, let's allow it but we need to know if we should override.
+    
     setIsLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -41,8 +52,10 @@ export function useRemindersData() {
   }, [supabase]);
 
   useEffect(() => {
-    loadReminders();
-  }, [loadReminders]);
+    if (!initialReminders) {
+        loadReminders();
+    }
+  }, [loadReminders, initialReminders]);
 
   const addReminder = async (formData: FormData) => {
     try {

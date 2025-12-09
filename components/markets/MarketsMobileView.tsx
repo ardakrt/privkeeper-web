@@ -42,33 +42,35 @@ export default function MarketsMobileView({ data }: MarketsMobileViewProps) {
       const items: any[] = [];
       watchlist.forEach(symbol => {
         const curr = marketData.currencies.find(c => c.code === symbol);
-        if (curr) { items.push({ ...curr, category: 'currency', ...marketItemConfig[symbol] }); return; }
+        if (curr) { items.push({ ...curr, ...marketItemConfig[symbol], category: 'currency' }); return; }
         
         const gold = marketData.golds.find(g => g.code === symbol);
-        if (gold) { items.push({ ...gold, category: 'gold', ...marketItemConfig[symbol] }); return; }
+        if (gold) { items.push({ ...gold, ...marketItemConfig[symbol], category: 'gold' }); return; }
         
         const crypto = marketData.cryptos?.find(c => c.code === symbol);
-        if (crypto) { 
-           items.push({ 
-             code: crypto.code, name: crypto.name, 
-             buying: crypto.priceUSD, selling: crypto.priceUSD, 
-             change: crypto.change, category: 'crypto', 
-             ...marketItemConfig[symbol] 
-           }); 
+        if (crypto) {
+           items.push({
+             code: crypto.code, name: crypto.name,
+             buying: crypto.priceUSD, selling: crypto.priceUSD,
+             change: crypto.change,
+             ...marketItemConfig[symbol],
+             category: 'crypto'
+           });
         }
       });
       return items;
     }
 
     if (activeTab === 'market') {
-      if (marketSubTab === 'currency') return marketData.currencies.map(c => ({ ...c, category: 'currency', ...marketItemConfig[c.code] }));
-      if (marketSubTab === 'gold') return marketData.golds.map(g => ({ ...g, category: 'gold', ...marketItemConfig[g.code] }));
-      if (marketSubTab === 'crypto') return marketData.cryptos?.map(c => ({ 
-        code: c.code, name: c.name, 
-        buying: c.priceUSD, 
-        selling: c.priceUSD, 
-        change: c.change, category: 'crypto', 
-        icon: '₿', color: '#F7931A' 
+      if (marketSubTab === 'currency') return marketData.currencies.map(c => ({ ...c, ...marketItemConfig[c.code], category: 'currency' }));
+      if (marketSubTab === 'gold') return marketData.golds.map(g => ({ ...g, ...marketItemConfig[g.code], category: 'gold' }));
+      if (marketSubTab === 'crypto') return marketData.cryptos?.map(c => ({
+        code: c.code, name: c.name,
+        buying: c.priceUSD,
+        selling: c.priceUSD,
+        change: c.change,
+        icon: '₿', color: '#F7931A',
+        category: 'crypto'
       })) || [];
     }
 

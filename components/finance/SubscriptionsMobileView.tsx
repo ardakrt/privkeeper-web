@@ -173,7 +173,7 @@ export default function SubscriptionsMobileView({ data }: SubscriptionsMobileVie
                 <div className="text-right">
                   <p className="font-medium text-zinc-900 dark:text-white">₺{item.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                   <p className="text-xs text-zinc-500 dark:text-white/40">
-                    {new Date(item.start_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                    {new Date(item.start_date || Date.now()).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
                   </p>
                 </div>
               </motion.div>
