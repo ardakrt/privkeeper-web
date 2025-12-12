@@ -55,8 +55,32 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Login request verified as approved');
 
-    // Determine redirect URL
-    const redirectBase = origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    // Determine redirect URL with robust fallback
+    let redirectBase = origin;
+    
+    if (!redirectBase || redirectBase === 'null' || redirectBase === 'undefined') {
+      redirectBase = process.env.NEXT_PUBLIC_SITE_URL;
+      
+      if (!redirectBase && process.env.NEXT_PUBLIC_VERCEL_URL) {
+        redirectBase = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+      }
+      
+      if (!redirectBase) {
+        redirectBase = 'http://localhost:3000';
+      }
+    }
+
+    // Ensure protocol
+    if (!redirectBase.startsWith('http')) {
+      redirectBase = `https://${redirectBase}`;
+    }
+    
+    // Remove trailing slash
+    if (redirectBase.endsWith('/')) {
+      redirectBase = redirectBase.slice(0, -1);
+    }
+
+    console.log('🔗 Using redirect base:', redirectBase);
     const redirectTo = `${redirectBase}/auth/callback`;
 
     // Step 3: Generate magic link using Admin API
